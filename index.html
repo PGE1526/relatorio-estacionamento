@@ -15,7 +15,7 @@
     .preview-grid{display:flex; flex-wrap:wrap; gap:10px}
     .tabs-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .tabs-row { display:flex; gap:8px; padding:6px; }
-    .tabs-row button { flex:0 0 auto; white-space:nowrap; }
+    .tabs-row button { flex: 0 0 auto; white-space:nowrap; }
     @media (max-width:640px){
       .tabs-row { gap:6px; }
       .tabs-row button { padding-left:10px;padding-right:10px;}
@@ -31,9 +31,9 @@
         <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações supervisor</p>
       </div>
       <div class="flex items-center gap-2">
-        <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">◀</button>
+        <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Dia anterior">◀</button>
         <input id="datePicker" type="date" class="border rounded px-3 py-2 bg-white" />
-        <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">▶</button>
+        <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Próximo dia">▶</button>
       </div>
     </div>
   </header>
@@ -41,19 +41,19 @@
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
     <nav class="bg-white rounded shadow p-0">
-      <div class="tabs-scroll">
-        <div class="tabs-row">
-          <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold">Veículos</button>
-          <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Bicicleta</button>
-          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Fechamento da P4</button>
-          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Relatório diário operador</button>
-          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Informações supervisor</button>
+      <div class="tabs-scroll" id="tabsScroll">
+        <div class="tabs-row" role="tablist" aria-label="Navegação principal">
+          <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold" role="tab">Veículos</button>
+          <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Bicicleta</button>
+          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Fechamento da P4</button>
+          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Relatório diário operador</button>
+          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Informações supervisor</button>
         </div>
       </div>
     </nav>
 
     <!-- Veículos -->
-    <section id="veiculos" class="tabcontent block">
+    <section id="veiculos" class="tabcontent" aria-labelledby="tabVeiculosBtn">
       <div class="grid md:grid-cols-2 gap-6">
         <div class="bg-white rounded shadow p-4">
           <h2 class="font-semibold mb-3">Registrar saída</h2>
@@ -66,7 +66,7 @@
             <div><label class="block text-sm font-medium mb-1">Hora</label><input type="time" id="horaInput" class="w-full border rounded px-3 py-2"></div>
             <div><label class="block text-sm font-medium mb-1">Motivo</label><input type="text" id="motivoInput" class="w-full border rounded px-3 py-2"></div>
             <div><label class="block text-sm font-medium mb-1">Operador</label><input type="text" id="operadorInput" class="w-full border rounded px-3 py-2"></div>
-            <div class="flex items-center gap-3"><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button><span id="msgVeiculo" class="text-sm text-green-700 hidden">Registro salvo.</span></div>
+            <div class="flex items-center gap-3"><button id="btnRegistrar" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button><span id="msgVeiculo" class="text-sm text-green-700 hidden">Registro salvo.</span></div>
           </form>
         </div>
 
@@ -84,7 +84,7 @@
     </section>
 
     <!-- Bicicleta -->
-    <section id="bicicleta" class="tabcontent hidden">
+    <section id="bicicleta" class="tabcontent hidden" aria-labelledby="tabBicicletaBtn">
       <div id="bicicletaCard" class="bg-white rounded shadow p-4 space-y-4">
         <div class="flex items-center justify-between">
           <h2 class="font-semibold">Controle de Bicicleta</h2>
@@ -122,7 +122,7 @@
     </section>
 
     <!-- Fechamento -->
-    <section id="fechamento" class="tabcontent hidden">
+    <section id="fechamento" class="tabcontent hidden" aria-labelledby="tabFechamentoBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
         <h2 class="font-semibold">Fechamento da P4</h2>
         <form id="formFechamento" class="space-y-3" novalidate>
@@ -147,7 +147,7 @@
     </section>
 
     <!-- Relatório -->
-    <section id="relatorio" class="tabcontent hidden">
+    <section id="relatorio" class="tabcontent hidden" aria-labelledby="tabRelatorioBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
         <h2 class="font-semibold">Relatório diário operador</h2>
         <form id="formRelatorio" class="space-y-3" novalidate>
@@ -169,7 +169,7 @@
     </section>
 
     <!-- Informações supervisor -->
-    <section id="info" class="tabcontent hidden">
+    <section id="info" class="tabcontent hidden" aria-labelledby="tabInfoBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
         <h2 class="font-semibold">Informações supervisor</h2>
         <p class="text-sm text-gray-600">Adicione fotos gerais do dia e observações do supervisor. Clique em Salvar Informações para gravar no Drive.</p>
@@ -212,7 +212,7 @@
 /* ---------- CONFIG: sua URL do Web App (ATUALIZADA) ---------- */
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzRK4eb_HbTTwwPs2ZG4xxVj_mRk77gQ8xlU3V6psh011dfdotlGrazSXYVisqL/exec";
 
-/* ---------- utilitários ---------- */
+/* ---------- utilitários e estado ---------- */
 let selectedDate = new Date().toISOString().slice(0,10);
 const datePicker = document.getElementById('datePicker');
 const prevDayBtn = document.getElementById('prevDay');
@@ -224,390 +224,445 @@ function carregarLocal(chave, padrao){ const raw = localStorage.getItem(chave); 
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function escapeHTML(str=''){ return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-/* ---------- date controls ---------- */
-function setDate(d){ selectedDate = d; datePicker.value = d; loadAllData(); const relDataEl=document.getElementById('relData'); if(relDataEl) relDataEl.value = d; }
-datePicker.addEventListener('change', e=> setDate(e.target.value));
-prevDayBtn.addEventListener('click', ()=>{ const d=new Date(selectedDate); d.setDate(d.getDate()-1); setDate(d.toISOString().slice(0,10)); });
-nextDayBtn.addEventListener('click', ()=>{ const d=new Date(selectedDate); d.setDate(d.getDate()+1); setDate(d.toISOString().slice(0,10)); });
-datePicker.value = selectedDate;
-if(document.getElementById('relData')) document.getElementById('relData').value = selectedDate;
+/* ---------- inicialização segura após DOM pronto ---------- */
+document.addEventListener('DOMContentLoaded', ()=>{
 
-/* ---------- tabs ---------- */
-const tabs = {
-  veiculosBtn: document.getElementById('tabVeiculosBtn'),
-  bicicletaBtn: document.getElementById('tabBicicletaBtn'),
-  fechamentoBtn: document.getElementById('tabFechamentoBtn'),
-  relatorioBtn: document.getElementById('tabRelatorioBtn'),
-  infoBtn: document.getElementById('tabInfoBtn')
-};
-const tabContents = {
-  veiculos: document.getElementById('veiculos'),
-  bicicleta: document.getElementById('bicicleta'),
-  fechamento: document.getElementById('fechamento'),
-  relatorio: document.getElementById('relatorio'),
-  info: document.getElementById('info')
-};
-function setActiveTabButton(btn){
-  Object.values(tabs).forEach(b=>{
-    b.classList.remove('bg-blue-600','text-white');
-    b.classList.add('bg-white','text-gray-700','border');
-  });
-  btn.classList.remove('bg-white','text-gray-700','border');
-  btn.classList.add('bg-blue-600','text-white');
-}
-function openTab(evt,name){
-  Object.values(tabContents).forEach(c=>c.classList.add('hidden'));
-  tabContents[name].classList.remove('hidden');
-  if(evt&&evt.currentTarget) setActiveTabButton(evt.currentTarget);
-  try{ evt.currentTarget.scrollIntoView({inline:'center', behavior:'smooth'}); }catch(e){}
-}
-tabs.veiculosBtn.addEventListener('click', e=>openTab(e,'veiculos'));
-tabs.bicicletaBtn.addEventListener('click', e=>openTab(e,'bicicleta'));
-tabs.fechamentoBtn.addEventListener('click', e=>openTab(e,'fechamento'));
-tabs.relatorioBtn.addEventListener('click', e=>openTab(e,'relatorio'));
-tabs.infoBtn.addEventListener('click', e=>openTab(e,'info'));
-setActiveTabButton(tabs.veiculosBtn);
-tabContents.veiculos.classList.remove('hidden');
+  // date controls
+  function setDate(d){ selectedDate = d; datePicker.value = d; loadAllData(); const relDataEl=document.getElementById('relData'); if(relDataEl) relDataEl.value = d; }
+  datePicker.addEventListener('change', e=> setDate(e.target.value));
+  prevDayBtn.addEventListener('click', ()=>{ const d=new Date(selectedDate); d.setDate(d.getDate()-1); setDate(d.toISOString().slice(0,10)); });
+  nextDayBtn.addEventListener('click', ()=>{ const d=new Date(selectedDate); d.setDate(d.getDate()+1); setDate(d.toISOString().slice(0,10)); });
+  datePicker.value = selectedDate;
 
-/* ---------- veículos (render + CRUD local + envio ao Drive) ---------- */
-const placaInput = document.getElementById('placaInput');
-const placaErro = document.getElementById('placaErro');
-const regexPlaca = /^[A-Z]{3}-\d[A-Z0-9]\d{2}$/;
-const formVeiculos = document.getElementById('formVeiculos');
-const registrosVeiculosBody = document.getElementById('registrosVeiculosBody');
-let registrosVeiculos = [];
-placaInput.addEventListener('input', e=>{ let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); if(v.length>3) v = v.slice(0,3)+'-'+v.slice(3,7); e.target.value = v.slice(0,8); placaErro.classList.add('hidden'); placaInput.classList.remove('border-red-500'); });
-function validarPlaca(p){ return regexPlaca.test((p||'').toUpperCase()); }
-
-function renderVeiculos(){
-  registrosVeiculosBody.innerHTML='';
-  if(!registrosVeiculos.length){
-    registrosVeiculosBody.innerHTML='<tr><td class="px-3 py-6 text-gray-500" colspan="5">Nenhum registro para a data selecionada.</td></tr>';
-    return;
+  // tabs
+  const tabs = {
+    veiculosBtn: document.getElementById('tabVeiculosBtn'),
+    bicicletaBtn: document.getElementById('tabBicicletaBtn'),
+    fechamentoBtn: document.getElementById('tabFechamentoBtn'),
+    relatorioBtn: document.getElementById('tabRelatorioBtn'),
+    infoBtn: document.getElementById('tabInfoBtn')
+  };
+  const tabContents = {
+    veiculos: document.getElementById('veiculos'),
+    bicicleta: document.getElementById('bicicleta'),
+    fechamento: document.getElementById('fechamento'),
+    relatorio: document.getElementById('relatorio'),
+    info: document.getElementById('info')
+  };
+  function setActiveTabButton(btn){
+    Object.values(tabs).forEach(b=>{
+      b.classList.remove('bg-blue-600','text-white');
+      b.classList.add('bg-white','text-gray-700','border');
+    });
+    btn.classList.remove('bg-white','text-gray-700','border');
+    btn.classList.add('bg-blue-600','text-white');
   }
-  registrosVeiculos.forEach(r=>{
-    const tr=document.createElement('tr'); tr.style.position='relative';
-    tr.innerHTML = `
-      <td class="border px-3 py-2 text-sm">${escapeHTML(r.placa)}</td>
-      <td class="border px-3 py-2 text-sm">${escapeHTML(r.hora)}</td>
-      <td class="border px-3 py-2 text-sm break-words">${escapeHTML(r.motivo)}</td>
-      <td class="border px-3 py-2 text-sm">${escapeHTML(r.operador)}</td>
-      <td class="border px-3 py-2 text-center">
-        <div class="relative inline-block">
-          <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" onclick="abrirMenuRegistro(event,'${r.id}')">⋮</button>
-          <div id="menu-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-            <button class="block w-full text-left px-3 py-2 hover:bg-gray-100" onclick="abrirEditar('${r.id}')">Editar</button>
-            <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600" onclick="excluirRegistro('${r.id}')">Excluir</button>
+  function openTab(evt,name){
+    Object.values(tabContents).forEach(c=>c.classList.add('hidden'));
+    tabContents[name].classList.remove('hidden');
+    if(evt&&evt.currentTarget) setActiveTabButton(evt.currentTarget);
+    try{ evt.currentTarget.scrollIntoView({inline:'center', behavior:'smooth'}); }catch(e){}
+  }
+  tabs.veiculosBtn.addEventListener('click', e=>openTab(e,'veiculos'));
+  tabs.bicicletaBtn.addEventListener('click', e=>openTab(e,'bicicleta'));
+  tabs.fechamentoBtn.addEventListener('click', e=>openTab(e,'fechamento'));
+  tabs.relatorioBtn.addEventListener('click', e=>openTab(e,'relatorio'));
+  tabs.infoBtn.addEventListener('click', e=>openTab(e,'info'));
+  setActiveTabButton(tabs.veiculosBtn);
+  tabContents.veiculos.classList.remove('hidden');
+
+  /* ---------- veículos (render + CRUD local + envio ao Drive) ---------- */
+  const placaInput = document.getElementById('placaInput');
+  const placaErro = document.getElementById('placaErro');
+  const regexPlaca = /^[A-Z]{3}-\d[A-Z0-9]\d{2}$/;
+  const formVeiculos = document.getElementById('formVeiculos');
+  const registrosVeiculosBody = document.getElementById('registrosVeiculosBody');
+  let registrosVeiculos = [];
+
+  placaInput.addEventListener('input', e=>{
+    let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(v.length>3) v = v.slice(0,3)+'-'+v.slice(3,7);
+    e.target.value = v.slice(0,8);
+    placaErro.classList.add('hidden'); placaInput.classList.remove('border-red-500');
+  });
+  function validarPlaca(p){ return regexPlaca.test((p||'').toUpperCase()); }
+
+  function renderVeiculos(){
+    registrosVeiculosBody.innerHTML='';
+    if(!Array.isArray(registrosVeiculos) || !registrosVeiculos.length){
+      registrosVeiculosBody.innerHTML='<tr><td class="px-3 py-6 text-gray-500" colspan="5">Nenhum registro para a data selecionada.</td></tr>';
+      return;
+    }
+    registrosVeiculos.forEach(r=>{
+      const tr=document.createElement('tr'); tr.style.position='relative';
+      tr.innerHTML = `
+        <td class="border px-3 py-2 text-sm">${escapeHTML(r.placa)}</td>
+        <td class="border px-3 py-2 text-sm">${escapeHTML(r.hora)}</td>
+        <td class="border px-3 py-2 text-sm break-words">${escapeHTML(r.motivo)}</td>
+        <td class="border px-3 py-2 text-sm">${escapeHTML(r.operador)}</td>
+        <td class="border px-3 py-2 text-center">
+          <div class="relative inline-block">
+            <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" aria-label="Abrir opções">⋮</button>
+            <div id="menu-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
+              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 edit-btn" data-id="${r.id}">Editar</button>
+              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600 del-btn" data-id="${r.id}">Excluir</button>
+            </div>
           </div>
-        </div>
-      </td>`;
-    registrosVeiculosBody.appendChild(tr);
-  });
-}
-
-document.addEventListener('click', ()=>{ document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); });
-function abrirMenuRegistro(e,id){ e.stopPropagation(); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); const menu=document.getElementById(`menu-${id}`); if(menu) menu.classList.toggle('hidden'); }
-
-formVeiculos.addEventListener('submit', async (ev)=>{
-  ev.preventDefault();
-  const placa = placaInput.value.trim().toUpperCase();
-  const hora = document.getElementById('horaInput').value.trim();
-  const motivo = document.getElementById('motivoInput').value.trim();
-  const operador = document.getElementById('operadorInput').value.trim();
-  if(!validarPlaca(placa)){ placaErro.classList.remove('hidden'); placaInput.classList.add('border-red-500'); return; }
-  if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
-  const novo = { id: genId(), placa, hora, motivo, operador, timestamp: new Date().toISOString() };
-  registrosVeiculos.push(novo);
-  salvarLocal(keyFor('veiculos'), registrosVeiculos);
-  renderVeiculos();
-  formVeiculos.reset();
-  document.getElementById('msgVeiculo').classList.remove('hidden');
-  setTimeout(()=>document.getElementById('msgVeiculo').classList.add('hidden'),1600);
-
-  // enviar ao Web App
-  await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro:novo });
-});
-
-/* ---------- edição / exclusão veículos (modal) ---------- */
-const modalEdit = document.getElementById('modalEdit');
-const editPlaca = document.getElementById('editPlaca');
-const editHora = document.getElementById('editHora');
-const editMotivo = document.getElementById('editMotivo');
-const editOperador = document.getElementById('editOperador');
-const btnCancelEdit = document.getElementById('btnCancelEdit');
-const btnSaveEdit = document.getElementById('btnSaveEdit');
-let currentEditId = null;
-
-function abrirEditar(id){
-  const r = registrosVeiculos.find(x=>x.id===id);
-  if(!r) return;
-  currentEditId = id;
-  editPlaca.value = r.placa || '';
-  editHora.value = r.hora || '';
-  editMotivo.value = r.motivo || '';
-  editOperador.value = r.operador || '';
-  modalEdit.classList.remove('hidden');
-}
-
-btnCancelEdit.addEventListener('click', ()=>{ currentEditId = null; modalEdit.classList.add('hidden'); });
-
-btnSaveEdit.addEventListener('click', async ()=>{
-  if(!currentEditId) return;
-  const placa = (editPlaca.value||'').trim().toUpperCase();
-  const hora = (editHora.value||'').trim();
-  const motivo = (editMotivo.value||'').trim();
-  const operador = (editOperador.value||'').trim();
-  if(!validarPlaca(placa)){ alert('Placa inválida.'); return; }
-  if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
-  const idx = registrosVeiculos.findIndex(x=>x.id===currentEditId);
-  if(idx===-1){ modalEdit.classList.add('hidden'); return; }
-  registrosVeiculos[idx] = { id: currentEditId, placa, hora, motivo, operador, timestamp: new Date().toISOString() };
-  salvarLocal(keyFor('veiculos'), registrosVeiculos);
-  renderVeiculos();
-  modalEdit.classList.add('hidden');
-
-  await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro: registrosVeiculos[idx] });
-  currentEditId = null;
-});
-
-function excluirRegistro(id){
-  if(!confirm('Excluir este registro?')) return;
-  registrosVeiculos = registrosVeiculos.filter(r=>r.id!==id);
-  salvarLocal(keyFor('veiculos'), registrosVeiculos);
-  renderVeiculos();
-
-  enviarAoWebApp({ acao:'excluir_veiculo', data:selectedDate, id });
-}
-
-/* ---------- bicicleta (local + enviar ao Drive) ---------- */
-const bicicletaTableEl = document.getElementById('bicicletaTable');
-const mediaEl = document.getElementById('mediaBicicleta');
-const anotacoesEl = document.getElementById('anotacoesBicicleta');
-let bicicletaData = { valores: Array(12).fill(''), anotacoes: '' };
-
-function construirTabelaBicicleta(){
-  bicicletaTableEl.innerHTML = '';
-  for(let i=0;i<12;i++){
-    const h = 10 + i;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="border px-3 py-2 text-sm">${h}h - ${h+1}h</td>
-                    <td class="border px-3 py-2"><input type="text" inputmode="decimal" data-index="${i}" class="bicicletaInput w-full border rounded px-3 py-2" value="${escapeHTML(bicicletaData.valores[i]||'')}"></td>`;
-    bicicletaTableEl.appendChild(tr);
+        </td>`;
+      registrosVeiculosBody.appendChild(tr);
+    });
   }
-  anotacoesEl.value = bicicletaData.anotacoes || '';
-  conectarEventosBicicleta();
-  calcularMedia();
-}
 
-function conectarEventosBicicleta(){
-  document.querySelectorAll('.bicicletaInput').forEach(inp=>{
-    inp.addEventListener('input', ()=>{
-      const idx = Number(inp.dataset.index);
-      bicicletaData.valores[idx] = inp.value;
-      salvarLocal(keyFor('bicicleta'), bicicletaData);
-      calcularMedia();
+  // manage menu clicks
+  registrosVeiculosBody.addEventListener('click', (e)=>{
+    const edit = e.target.closest('.edit-btn');
+    const del = e.target.closest('.del-btn');
+    if(edit){ abrirEditar(edit.dataset.id); return; }
+    if(del){ excluirRegistro(del.dataset.id); return; }
+  });
+
+  // toggle menu when clicking dots
+  registrosVeiculosBody.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-id]');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    if(!id) return;
+    e.stopPropagation();
+    // hide others
+    document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden'));
+    const menu = document.getElementById(`menu-${id}`);
+    if(menu) menu.classList.toggle('hidden');
+  });
+
+  // close menus clicking outside
+  document.addEventListener('click', ()=>{ document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); });
+
+  formVeiculos.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const placa = placaInput.value.trim().toUpperCase();
+    const hora = document.getElementById('horaInput').value.trim();
+    const motivo = document.getElementById('motivoInput').value.trim();
+    const operador = document.getElementById('operadorInput').value.trim();
+    if(!validarPlaca(placa)){ placaErro.classList.remove('hidden'); placaInput.classList.add('border-red-500'); return; }
+    if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
+    const novo = { id: genId(), placa, hora, motivo, operador, timestamp: new Date().toISOString() };
+    registrosVeiculos.push(novo);
+    salvarLocal(keyFor('veiculos'), registrosVeiculos);
+    renderVeiculos();
+    formVeiculos.reset();
+    document.getElementById('msgVeiculo').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('msgVeiculo').classList.add('hidden'),1600);
+
+    // enviar ao Web App
+    await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro:novo });
+  });
+
+  /* ---------- edição / exclusão veículos (modal) ---------- */
+  const modalEdit = document.getElementById('modalEdit');
+  const editPlaca = document.getElementById('editPlaca');
+  const editHora = document.getElementById('editHora');
+  const editMotivo = document.getElementById('editMotivo');
+  const editOperador = document.getElementById('editOperador');
+  const btnCancelEdit = document.getElementById('btnCancelEdit');
+  const btnSaveEdit = document.getElementById('btnSaveEdit');
+  let currentEditId = null;
+
+  function abrirEditar(id){
+    const r = registrosVeiculos.find(x=>x.id===id);
+    if(!r) return;
+    currentEditId = id;
+    editPlaca.value = r.placa || '';
+    editHora.value = r.hora || '';
+    editMotivo.value = r.motivo || '';
+    editOperador.value = r.operador || '';
+    modalEdit.classList.remove('hidden');
+  }
+
+  btnCancelEdit.addEventListener('click', ()=>{ currentEditId = null; modalEdit.classList.add('hidden'); });
+
+  btnSaveEdit.addEventListener('click', async ()=>{
+    if(!currentEditId) return;
+    const placa = (editPlaca.value||'').trim().toUpperCase();
+    const hora = (editHora.value||'').trim();
+    const motivo = (editMotivo.value||'').trim();
+    const operador = (editOperador.value||'').trim();
+    if(!validarPlaca(placa)){ alert('Placa inválida.'); return; }
+    if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
+    const idx = registrosVeiculos.findIndex(x=>x.id===currentEditId);
+    if(idx===-1){ modalEdit.classList.add('hidden'); return; }
+    registrosVeiculos[idx] = { id: currentEditId, placa, hora, motivo, operador, timestamp: new Date().toISOString() };
+    salvarLocal(keyFor('veiculos'), registrosVeiculos);
+    renderVeiculos();
+    modalEdit.classList.add('hidden');
+
+    await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro: registrosVeiculos[idx] });
+    currentEditId = null;
+  });
+
+  function excluirRegistro(id){
+    if(!confirm('Excluir este registro?')) return;
+    registrosVeiculos = registrosVeiculos.filter(r=>r.id!==id);
+    salvarLocal(keyFor('veiculos'), registrosVeiculos);
+    renderVeiculos();
+
+    enviarAoWebApp({ acao:'excluir_veiculo', data:selectedDate, id });
+  }
+
+  /* ---------- bicicleta (construção da tabela + eventos) ---------- */
+  const bicicletaTableEl = document.getElementById('bicicletaTable');
+  const mediaEl = document.getElementById('mediaBicicleta');
+  const anotacoesEl = document.getElementById('anotacoesBicicleta');
+  let bicicletaData = { valores: Array(12).fill(''), anotacoes: '' };
+
+  function construirTabelaBicicleta(){
+    bicicletaTableEl.innerHTML = '';
+    for(let i=0;i<12;i++){
+      const h = 10 + i;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="border px-3 py-2 text-sm">${h}h - ${h+1}h</td>
+                      <td class="border px-3 py-2"><input type="text" inputmode="decimal" data-index="${i}" class="bicicletaInput w-full border rounded px-3 py-2" value="${escapeHTML(bicicletaData.valores[i]||'')}"></td>`;
+      bicicletaTableEl.appendChild(tr);
+    }
+    anotacoesEl.value = bicicletaData.anotacoes || '';
+    conectarEventosBicicleta();
+    calcularMedia();
+  }
+
+  function conectarEventosBicicleta(){
+    document.querySelectorAll('.bicicletaInput').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const idx = Number(inp.dataset.index);
+        bicicletaData.valores[idx] = inp.value;
+        salvarLocal(keyFor('bicicleta'), bicicletaData);
+        calcularMedia();
+      });
+      inp.addEventListener('blur', ()=>{
+        const idx = Number(inp.dataset.index);
+        bicicletaData.valores[idx] = inp.value;
+        salvarLocal(keyFor('bicicleta'), bicicletaData);
+        calcularMedia();
+      });
     });
-    inp.addEventListener('blur', ()=>{
-      const idx = Number(inp.dataset.index);
-      bicicletaData.valores[idx] = inp.value;
+    anotacoesEl.addEventListener('input', ()=>{
+      bicicletaData.anotacoes = anotacoesEl.value;
       salvarLocal(keyFor('bicicleta'), bicicletaData);
-      calcularMedia();
+      document.getElementById('msgBic').classList.remove('hidden');
+      setTimeout(()=>document.getElementById('msgBic').classList.add('hidden'),1200);
     });
-  });
-  anotacoesEl.addEventListener('input', ()=>{
-    bicicletaData.anotacoes = anotacoesEl.value;
-    salvarLocal(keyFor('bicicleta'), bicicletaData);
-    document.getElementById('msgBic').classList.remove('hidden');
-    setTimeout(()=>document.getElementById('msgBic').classList.add('hidden'),1200);
-  });
-}
+  }
 
-document.getElementById('btnSalvarBicicleta').addEventListener('click', async ()=>{
-  const payload = { acao:'salvar_bicicleta', data:selectedDate, registro: bicicletaData };
-  const res = await enviarAoWebApp(payload);
-  if(res) { document.getElementById('msgSalvarBic').classList.remove('hidden'); setTimeout(()=>document.getElementById('msgSalvarBic').classList.add('hidden'),1200); }
-});
+  function parseNumero(v){ if((v === '' || v === null || v===undefined) && v!==0) return 0; const s=String(v).trim().replace(',','.'); const n=parseFloat(s); return isNaN(n)?0:n; }
+  function calcularMedia(){ const soma = bicicletaData.valores.reduce((acc,cur)=>acc+parseNumero(cur),0); const media = soma/12; mediaEl.textContent = media.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
-/* ---------- Fechamento (salvar local + enviar ao Drive) ---------- */
-const formFechamento = document.getElementById('formFechamento');
-const listaFechamentos = document.getElementById('listaFechamentos');
-let fechamentos = [];
-function renderFechamentos(){
-  listaFechamentos.innerHTML='';
-  if(!fechamentos.length){ listaFechamentos.innerHTML='<p class="text-sm text-gray-600">Nenhum fechamento salvo para a data selecionada.</p>'; return; }
-  fechamentos.forEach(r=>{
-    const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
-    const altLabel = document.createElement('div'); altLabel.className='text-sm'; const s= document.createElement('strong'); s.textContent='Alterações nos terminais: '; altLabel.appendChild(s);
-    const altText = document.createElement('div'); altText.className='text-sm preserve'; altText.textContent = r.alteracoes || '';
-    div.appendChild(altLabel); div.appendChild(altText);
-    const cred = document.createElement('div'); cred.className='text-sm'; cred.textContent = `Credencial na guarita: ${r.credencial ? 'Sim':'Não'}`; div.appendChild(cred);
-    const chave = document.createElement('div'); chave.className='text-sm'; chave.textContent = `Chave na guarita: ${r.chave ? 'Sim':'Não'}`; div.appendChild(chave);
-    const he = document.createElement('div'); he.className='text-sm'; he.textContent = `Hora fechamento entrada: ${r.horaEntrada||''}`; div.appendChild(he);
-    const hs = document.createElement('div'); hs.className='text-sm'; hs.textContent = `Hora fechamento saída: ${r.horaSaida||''}`; div.appendChild(hs);
-    const hp = document.createElement('div'); hp.className='text-sm'; hp.textContent = `Hora fechamento pedestre: ${r.horaPedestre||''}`; div.appendChild(hp);
-    listaFechamentos.appendChild(div);
-  });
-}
-formFechamento.addEventListener('submit', async (ev)=>{
-  ev.preventDefault();
-  const ta = document.getElementById('alteracoesTerminais');
-  const raw = ta.value || '';
-  const credencial = document.getElementById('credencialGuarita').checked;
-  const chave = document.getElementById('chaveGuarita').checked;
-  const horaEntrada = document.getElementById('horaFechEntrada').value;
-  const horaSaida = document.getElementById('horaFechSaida').value;
-  const horaPedestre = document.getElementById('horaFechPedestre').value;
-  const rec = { id: genId(), alteracoes: raw, credencial, chave, horaEntrada, horaSaida, horaPedestre, timestamp: new Date().toISOString() };
-  fechamentos.push(rec);
-  salvarLocal(keyFor('fechamento'), fechamentos);
-  renderFechamentos();
-  formFechamento.reset();
-  document.getElementById('msgFech').classList.remove('hidden');
-  setTimeout(()=>document.getElementById('msgFech').classList.add('hidden'),1200);
-
-  await enviarAoWebApp({ acao:'salvar_fechamento', data:selectedDate, registro: rec });
-});
-
-/* ---------- Relatórios (local + enviar ao Drive) ---------- */
-const formRelatorio = document.getElementById('formRelatorio');
-const listaRelatorios = document.getElementById('listaRelatorios');
-let relatorios = [];
-function renderRelatorios(){
-  listaRelatorios.innerHTML='';
-  if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600'>Nenhum relatório para a data selecionada.</p>'; return; }
-  relatorios.forEach(r=>{
-    const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
-    const nome = document.createElement('div'); nome.className='text-sm'; nome.textContent = `Nome: ${r.nome}`; div.appendChild(nome);
-    const data = document.createElement('div'); data.className='text-sm'; data.textContent = `Data: ${r.data}`; div.appendChild(data);
-    const turnoLabel = r.turno === '08-20' ? '08:00 - 20:00' : (r.turno === '11-23' ? '11:00 - 23:00' : '13:00 - 01:00');
-    const turnoDiv = document.createElement('div'); turnoDiv.className='text-sm'; turnoDiv.textContent = `Turno: ${turnoLabel}`; div.appendChild(turnoDiv);
-    const infoLabel = document.createElement('div'); infoLabel.className='text-sm'; const s=document.createElement('strong'); s.textContent='Informações: '; infoLabel.appendChild(s);
-    const infoText = document.createElement('div'); infoText.className='text-sm preserve'; infoText.textContent = r.info || ''; div.appendChild(infoLabel); div.appendChild(infoText);
-    listaRelatorios.appendChild(div);
-  });
-}
-formRelatorio.addEventListener('submit', async (ev)=>{
-  ev.preventDefault();
-  const nome = document.getElementById('relNome').value.trim();
-  if(!nome){ alert('Informe o nome.'); return; }
-  const data = document.getElementById('relData').value || selectedDate;
-  const turno = document.getElementById('relTurno').value;
-  const ta = document.getElementById('relInfo');
-  const raw = ta.value || '';
-  const rec = { id: genId(), nome, data, turno, info: raw, timestamp: new Date().toISOString() };
-  relatorios.push(rec);
-  salvarLocal(keyFor('relatorio'), relatorios);
-  renderRelatorios();
-  formRelatorio.reset();
-  document.getElementById('relData').value = selectedDate;
-  document.getElementById('msgRel').classList.remove('hidden');
-  setTimeout(()=>document.getElementById('msgRel').classList.add('hidden'),1200);
-
-  await enviarAoWebApp({ acao:'salvar_relatorio', data:selectedDate, registro: rec });
-});
-
-/* ---------- Upload de fotos: preview + envio ao Apps Script ---------- */
-function setupPhotoUpload(inputId, previewContainerId, sectionLabel, extraDataFn){
-  const input = document.getElementById(inputId);
-  const preview = document.getElementById(previewContainerId);
-  if(!input || !preview) return;
-  input.addEventListener('change', async ()=>{
-    const file = input.files && input.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = async (e)=>{
-      const dataUrl = e.target.result;
-      const img = document.createElement('img');
-      img.className = 'preview-img';
-      img.src = dataUrl;
-      preview.prepend(img);
-      const payload = {
-        imagem: dataUrl,
-        nomeArquivo: file.name || `${sectionLabel}_${selectedDate}.png`,
-        data: selectedDate,
-        secao: sectionLabel,
-        meta: extraDataFn ? extraDataFn() : {}
-      };
-      try{
-        const resp = await fetch(WEBAPP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ acao:'salvar_imagem', payload })
-        });
-        const text = await resp.text();
-        alert("Foto salva no Google Drive: " + text);
-      }catch(err){
-        console.error(err);
-        alert("Erro ao enviar foto para o Google Drive.");
+  document.getElementById('btnCompartilhar').addEventListener('click', async ()=>{
+    try{
+      const el=document.getElementById('bicicletaCard');
+      const imgs=el.querySelectorAll('img');
+      await Promise.all(Array.from(imgs).map(img=> img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r})));
+      const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
+      const blob = await new Promise(r=>canvas.toBlob(r,'image/png'));
+      const fileName = `bicicleta_${selectedDate}_${new Date().toISOString().slice(11,19).replace(/:/g,'-')}.png`;
+      if(navigator.canShare && navigator.canShare({files:[new File([blob],fileName,{type:'image/png'})]})){
+        try{ await navigator.share({files:[new File([blob],fileName,{type:'image/png'})], title:'Controle de Bicicleta', text:`Registro ${selectedDate}`}); return; }catch(err){}
       }
-    };
-    reader.readAsDataURL(file);
+      const url=URL.createObjectURL(blob); window.open(url,'_blank');
+    }catch(err){ alert('Erro ao gerar compartilhamento.'); console.error(err); }
   });
-}
-setupPhotoUpload("fotoBicicleta","previewBicicleta","bicicleta", ()=>({ anotacoes: document.getElementById('anotacoesBicicleta')?.value || '' }));
-setupPhotoUpload("fotoFechamento","previewFechamento","fechamento", ()=>({
-  alteracoes: document.getElementById('alteracoesTerminais')?.value || '',
-  credencial: document.getElementById('credencialGuarita')?.checked || false,
-  chave: document.getElementById('chaveGuarita')?.checked || false,
-  horaEntrada: document.getElementById('horaFechEntrada')?.value || '',
-  horaSaida: document.getElementById('horaFechSaida')?.value || '',
-  horaPedestre: document.getElementById('horaFechPedestre')?.value || ''
-}));
-setupPhotoUpload("fotoRelatorio","previewRelatorio","relatorio", ()=>({
-  nome: document.getElementById('relNome')?.value || '',
-  turno: document.getElementById('relTurno')?.value || '',
-  info: document.getElementById('relInfo')?.value || ''
-}));
-setupPhotoUpload("fotoInfo","previewInfo","informacoes_supervisor", ()=>({
-  descricao: document.getElementById('infoDescricao')?.value || ''
-}));
 
-/* ---------- botão salvar Informações supervisor ---------- */
-document.getElementById('btnSalvarInfo').addEventListener('click', async ()=>{
-  const descricao = document.getElementById('infoDescricao').value.trim();
-  if(!descricao){ alert('Escreva algo antes de salvar.'); return; }
-  const rec = { id: genId(), descricao, timestamp: new Date().toISOString() };
-  salvarLocal(keyFor('info'), rec);
-  document.getElementById('msgInfo').classList.remove('hidden');
-  setTimeout(()=>document.getElementById('msgInfo').classList.add('hidden'),1600);
-  await enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' });
-});
+  document.getElementById('btnSalvarBicicleta').addEventListener('click', async ()=>{
+    const payload = { acao:'salvar_bicicleta', data:selectedDate, registro: bicicletaData };
+    const res = await enviarAoWebApp(payload);
+    if(res) { document.getElementById('msgSalvarBic').classList.remove('hidden'); setTimeout(()=>document.getElementById('msgSalvarBic').classList.add('hidden'),1200); }
+  });
 
-/* ---------- helper para enviar ao WebApp ---------- */
-async function enviarAoWebApp(obj){
-  if(!WEBAPP_URL || WEBAPP_URL.includes('COLE_AQUI')) return null;
-  try{
-    const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(obj) });
-    const text = await resp.text();
-    console.log('WebApp response:', text);
-    return text;
-  }catch(err){
-    console.error('Erro ao enviar ao WebApp:', err);
-    return null;
+  /* ---------- Fechamento ---------- */
+  const formFechamento = document.getElementById('formFechamento');
+  const listaFechamentos = document.getElementById('listaFechamentos');
+  let fechamentos = [];
+
+  function renderFechamentos(){
+    listaFechamentos.innerHTML='';
+    if(!fechamentos.length){ listaFechamentos.innerHTML='<p class="text-sm text-gray-600">Nenhum fechamento salvo para a data selecionada.</p>'; return; }
+    fechamentos.forEach(r=>{
+      const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
+      const altLabel = document.createElement('div'); altLabel.className='text-sm'; const s= document.createElement('strong'); s.textContent='Alterações nos terminais: '; altLabel.appendChild(s);
+      const altText = document.createElement('div'); altText.className='text-sm preserve'; altText.textContent = r.alteracoes || '';
+      div.appendChild(altLabel); div.appendChild(altText);
+      const cred = document.createElement('div'); cred.className='text-sm'; cred.textContent = `Credencial na guarita: ${r.credencial ? 'Sim':'Não'}`; div.appendChild(cred);
+      const chave = document.createElement('div'); chave.className='text-sm'; chave.textContent = `Chave na guarita: ${r.chave ? 'Sim':'Não'}`; div.appendChild(chave);
+      const he = document.createElement('div'); he.className='text-sm'; he.textContent = `Hora fechamento entrada: ${r.horaEntrada||''}`; div.appendChild(he);
+      const hs = document.createElement('div'); hs.className='text-sm'; hs.textContent = `Hora fechamento saída: ${r.horaSaida||''}`; div.appendChild(hs);
+      const hp = document.createElement('div'); hp.className='text-sm'; hp.textContent = `Hora fechamento pedestre: ${r.horaPedestre||''}`; div.appendChild(hp);
+      listaFechamentos.appendChild(div);
+    });
   }
-}
 
-/* ---------- load / init ---------- */
-function loadAllData(){
-  registrosVeiculos = carregarLocal(keyFor('veiculos'), []);
-  renderVeiculos();
-  bicicletaData = carregarLocal(keyFor('bicicleta'), { valores: Array(12).fill(''), anotacoes: '' });
-  construirTabelaBicicleta();
-  fechamentos = carregarLocal(keyFor('fechamento'), []);
-  renderFechamentos();
-  relatorios = carregarLocal(keyFor('relatorio'), []);
-  renderRelatorios();
-  const infoLocal = carregarLocal(keyFor('info'), null);
-  if(infoLocal && infoLocal.descricao) document.getElementById('infoDescricao').value = infoLocal.descricao;
-}
-loadAllData();
+  formFechamento.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const ta = document.getElementById('alteracoesTerminais');
+    const raw = ta.value || '';
+    const credencial = document.getElementById('credencialGuarita').checked;
+    const chave = document.getElementById('chaveGuarita').checked;
+    const horaEntrada = document.getElementById('horaFechEntrada').value;
+    const horaSaida = document.getElementById('horaFechSaida').value;
+    const horaPedestre = document.getElementById('horaFechPedestre').value;
+    const rec = { id: genId(), alteracoes: raw, credencial, chave, horaEntrada, horaSaida, horaPedestre, timestamp: new Date().toISOString() };
+    fechamentos.push(rec);
+    salvarLocal(keyFor('fechamento'), fechamentos);
+    renderFechamentos();
+    formFechamento.reset();
+    document.getElementById('msgFech').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('msgFech').classList.add('hidden'),1200);
 
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElementById('modalEdit').classList.add('hidden'); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); } });
+    await enviarAoWebApp({ acao:'salvar_fechamento', data:selectedDate, registro: rec });
+  });
 
-/* export functions for inline handlers */
-window.abrirMenuRegistro = abrirMenuRegistro;
-window.abrirEditar = abrirEditar;
-window.excluirRegistro = excluirRegistro;
+  /* ---------- Relatórios ---------- */
+  const formRelatorio = document.getElementById('formRelatorio');
+  const listaRelatorios = document.getElementById('listaRelatorios');
+  let relatorios = [];
+
+  function renderRelatorios(){
+    listaRelatorios.innerHTML='';
+    if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600">Nenhum relatório para a data selecionada.</p>'; return; }
+    relatorios.forEach(r=>{
+      const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
+      const nome = document.createElement('div'); nome.className='text-sm'; nome.textContent = `Nome: ${r.nome}`; div.appendChild(nome);
+      const data = document.createElement('div'); data.className='text-sm'; data.textContent = `Data: ${r.data}`; div.appendChild(data);
+      const turnoLabel = r.turno === '08-20' ? '08:00 - 20:00' : (r.turno === '11-23' ? '11:00 - 23:00' : '13:00 - 01:00');
+      const turnoDiv = document.createElement('div'); turnoDiv.className='text-sm'; turnoDiv.textContent = `Turno: ${turnoLabel}`; div.appendChild(turnoDiv);
+      const infoLabel = document.createElement('div'); infoLabel.className='text-sm'; const s=document.createElement('strong'); s.textContent='Informações: '; infoLabel.appendChild(s);
+      const infoText = document.createElement('div'); infoText.className='text-sm preserve'; infoText.textContent = r.info || ''; div.appendChild(infoLabel); div.appendChild(infoText);
+      listaRelatorios.appendChild(div);
+    });
+  }
+
+  formRelatorio.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const nome = document.getElementById('relNome').value.trim();
+    if(!nome){ alert('Informe o nome.'); return; }
+    const data = document.getElementById('relData').value || selectedDate;
+    const turno = document.getElementById('relTurno').value;
+    const ta = document.getElementById('relInfo');
+    const raw = ta.value || '';
+    const rec = { id: genId(), nome, data, turno, info: raw, timestamp: new Date().toISOString() };
+    relatorios.push(rec);
+    salvarLocal(keyFor('relatorio'), relatorios);
+    renderRelatorios();
+    formRelatorio.reset();
+    document.getElementById('relData').value = selectedDate;
+    document.getElementById('msgRel').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('msgRel').classList.add('hidden'),1200);
+
+    await enviarAoWebApp({ acao:'salvar_relatorio', data:selectedDate, registro: rec });
+  });
+
+  /* ---------- Upload de fotos: preview + envio ao Apps Script ---------- */
+  function setupPhotoUpload(inputId, previewContainerId, sectionLabel, extraDataFn){
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewContainerId);
+    if(!input || !preview) return;
+    input.addEventListener('change', async ()=>{
+      const file = input.files && input.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e)=>{
+        const dataUrl = e.target.result;
+        const img = document.createElement('img');
+        img.className = 'preview-img';
+        img.src = dataUrl;
+        preview.prepend(img);
+        const payload = {
+          imagem: dataUrl,
+          nomeArquivo: file.name || `${sectionLabel}_${selectedDate}.png`,
+          data: selectedDate,
+          secao: sectionLabel,
+          meta: extraDataFn ? extraDataFn() : {}
+        };
+        try{
+          const resp = await fetch(WEBAPP_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ acao:'salvar_imagem', payload })
+          });
+          const text = await resp.text();
+          alert("Foto salva no Google Drive: " + text);
+        }catch(err){
+          console.error(err);
+          alert("Erro ao enviar foto para o Google Drive.");
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  setupPhotoUpload("fotoBicicleta","previewBicicleta","bicicleta", ()=>({ anotacoes: document.getElementById('anotacoesBicicleta')?.value || '' }));
+  setupPhotoUpload("fotoFechamento","previewFechamento","fechamento", ()=>({
+    alteracoes: document.getElementById('alteracoesTerminais')?.value || '',
+    credencial: document.getElementById('credencialGuarita')?.checked || false,
+    chave: document.getElementById('chaveGuarita')?.checked || false,
+    horaEntrada: document.getElementById('horaFechEntrada')?.value || '',
+    horaSaida: document.getElementById('horaFechSaida')?.value || '',
+    horaPedestre: document.getElementById('horaFechPedestre')?.value || ''
+  }));
+  setupPhotoUpload("fotoRelatorio","previewRelatorio","relatorio", ()=>({
+    nome: document.getElementById('relNome')?.value || '',
+    turno: document.getElementById('relTurno')?.value || '',
+    info: document.getElementById('relInfo')?.value || ''
+  }));
+  setupPhotoUpload("fotoInfo","previewInfo","informacoes_supervisor", ()=>({
+    descricao: document.getElementById('infoDescricao')?.value || ''
+  }));
+
+  /* ---------- botão salvar Informações supervisor ---------- */
+  document.getElementById('btnSalvarInfo').addEventListener('click', async ()=>{
+    const descricao = document.getElementById('infoDescricao').value.trim();
+    if(!descricao){ alert('Escreva algo antes de salvar.'); return; }
+    const rec = { id: genId(), descricao, timestamp: new Date().toISOString() };
+    salvarLocal(keyFor('info'), rec);
+    document.getElementById('msgInfo').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('msgInfo').classList.add('hidden'),1600);
+    await enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' });
+  });
+
+  /* ---------- helper para enviar ao WebApp ---------- */
+  async function enviarAoWebApp(obj){
+    if(!WEBAPP_URL || WEBAPP_URL.includes('COLE_AQUI')) return null;
+    try{
+      const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(obj) });
+      const text = await resp.text();
+      console.log('WebApp response:', text);
+      return text;
+    }catch(err){
+      console.error('Erro ao enviar ao WebApp:', err);
+      return null;
+    }
+  }
+
+  /* ---------- load / init ---------- */
+  function loadAllData(){
+    registrosVeiculos = carregarLocal(keyFor('veiculos'), []);
+    renderVeiculos();
+    bicicletaData = carregarLocal(keyFor('bicicleta'), { valores: Array(12).fill(''), anotacoes: '' });
+    construirTabelaBicicleta();
+    fechamentos = carregarLocal(keyFor('fechamento'), []);
+    renderFechamentos();
+    relatorios = carregarLocal(keyFor('relatorio'), []);
+    renderRelatorios();
+    const infoLocal = carregarLocal(keyFor('info'), null);
+    if(infoLocal && infoLocal.descricao) document.getElementById('infoDescricao').value = infoLocal.descricao;
+    // set relData if present
+    const relDataEl=document.getElementById('relData'); if(relDataEl) relDataEl.value = selectedDate;
+  }
+  loadAllData();
+
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElementById('modalEdit').classList.add('hidden'); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); } });
+
+  /* export functions for inline handlers (if needed) */
+  window.abrirMenuRegistro = function(e,id){ abrirMenuRegistro(e,id); };
+  window.abrirEditar = abrirEditar;
+  window.excluirRegistro = excluirRegistro;
+
+}); // end DOMContentLoaded
 </script>
 
 </body>
