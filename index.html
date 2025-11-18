@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Estacionamento</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f2f2f2;
+    }
+    h1 {
+      color: #333;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+      display: block;
+      margin-bottom: 15px;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Formulário de Relatório</h1>
+  <form id="formRelatorio">
+    <input id="placa" placeholder="Placa do veículo" required />
+    <input id="hora" placeholder="Hora" required />
+    <input id="motivo" placeholder="Motivo" required />
+    <input id="operador" placeholder="Operador" required />
+    <button type="submit">Enviar relatório</button>
+  </form>
+
+  <script>
+    document.getElementById('formRelatorio').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dados = {
+        placa: document.getElementById('placa').value,
+        hora: document.getElementById('hora').value,
+        motivo: document.getElementById('motivo').value,
+        operador: document.getElementById('operador').value
+      };
+      await fetch('https://script.google.com/macros/s/AKfycbyp2tp5u1u6nJ5AJdy7gWuzEK7inzvSTT3Tx1IPAVY4tMI9BJpneFHEiAt0I20_eiGV/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      });
+      alert('Relatório enviado com sucesso!');
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>
