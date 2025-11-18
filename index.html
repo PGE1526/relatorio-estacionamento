@@ -16,10 +16,6 @@
     .tabs-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .tabs-row { display:flex; gap:8px; padding:6px; }
     .tabs-row button { flex: 0 0 auto; white-space:nowrap; }
-    @media (max-width:640px){
-      .tabs-row { gap:6px; }
-      .tabs-row button { padding-left:10px;padding-right:10px;}
-    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -45,9 +41,9 @@
         <div class="tabs-row" role="tablist" aria-label="Navegação principal">
           <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold" role="tab">Veículos</button>
           <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Bicicleta</button>
-          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Fechamento da P4</button>
-          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Relatório diário operador</button>
-          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Informações supervisor</button>
+          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Fechamento</button>
+          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Relatório</button>
+          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Informações</button>
         </div>
       </div>
     </nav>
@@ -189,6 +185,8 @@
           <button id="btnSalvarInfo" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar Informações</button>
           <span id="msgInfo" class="text-sm text-green-700 hidden">Informações salvas.</span>
         </div>
+
+        <div id="listaInfo" class="mt-3 space-y-3"></div>
       </div>
     </section>
 
@@ -217,14 +215,13 @@ let selectedDate = new Date().toISOString().slice(0,10);
 const datePicker = document.getElementById('datePicker');
 const prevDayBtn = document.getElementById('prevDay');
 const nextDayBtn = document.getElementById('nextDay');
-
 function keyFor(kind, date = selectedDate){ return `${kind}_${date}`; }
 function salvarLocal(chave, obj){ localStorage.setItem(chave, JSON.stringify(obj)); }
 function carregarLocal(chave, padrao){ const raw = localStorage.getItem(chave); return raw ? JSON.parse(raw) : padrao; }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function escapeHTML(str=''){ return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-/* ---------- inicialização segura após DOM pronto ---------- */
+/* ---------- inicialização após DOM pronto ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
 
   // date controls
@@ -271,7 +268,29 @@ document.addEventListener('DOMContentLoaded', ()=>{
   setActiveTabButton(tabs.veiculosBtn);
   tabContents.veiculos.classList.remove('hidden');
 
-  /* ---------- veículos (render + CRUD local + envio ao Drive) ---------- */
+  /* ---------- Função para enviar ao Web App (com retorno e erro visíveis) ---------- */
+  async function enviarAoWebApp(obj){
+    if(!WEBAPP_URL || WEBAPP_URL.includes('COLE_AQUI')) {
+      console.warn('WEBAPP_URL não configurada');
+      return null;
+    }
+    try{
+      const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(obj) });
+      const text = await resp.text();
+      if(!resp.ok){
+        console.error('WebApp retornou erro', resp.status, text);
+        alert('Erro do WebApp: HTTP ' + resp.status + ' — ' + text);
+        return { ok:false, status:resp.status, text };
+      }
+      return { ok:true, text };
+    }catch(err){
+      console.error('Erro de rede ao chamar WebApp', err);
+      alert('Erro de rede ao enviar ao Web App. Veja o console para mais detalhes.');
+      return { ok:false, error: String(err) };
+    }
+  }
+
+  /* ---------- VEÍCULOS (CRUD + UI) ---------- */
   const placaInput = document.getElementById('placaInput');
   const placaErro = document.getElementById('placaErro');
   const regexPlaca = /^[A-Z]{3}-\d[A-Z0-9]\d{2}$/;
@@ -302,7 +321,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         <td class="border px-3 py-2 text-sm">${escapeHTML(r.operador)}</td>
         <td class="border px-3 py-2 text-center">
           <div class="relative inline-block">
-            <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" aria-label="Abrir opções">⋮</button>
+            <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100 dots-btn" data-id="${r.id}" aria-label="Abrir opções">⋮</button>
             <div id="menu-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
               <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 edit-btn" data-id="${r.id}">Editar</button>
               <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600 del-btn" data-id="${r.id}">Excluir</button>
@@ -313,29 +332,21 @@ document.addEventListener('DOMContentLoaded', ()=>{
     });
   }
 
-  // manage menu clicks
-  registrosVeiculosBody.addEventListener('click', (e)=>{
+  // handler único para tabela de veículos (abrir menu / editar / excluir)
+  registrosVeiculosBody.addEventListener('click', async (e)=>{
+    const dots = e.target.closest('.dots-btn');
+    if(dots){
+      const id = dots.dataset.id;
+      document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden'));
+      const menu = document.getElementById(`menu-${id}`);
+      if(menu) menu.classList.toggle('hidden');
+      return;
+    }
     const edit = e.target.closest('.edit-btn');
-    const del = e.target.closest('.del-btn');
     if(edit){ abrirEditar(edit.dataset.id); return; }
+    const del = e.target.closest('.del-btn');
     if(del){ excluirRegistro(del.dataset.id); return; }
   });
-
-  // toggle menu when clicking dots
-  registrosVeiculosBody.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button[data-id]');
-    if(!btn) return;
-    const id = btn.dataset.id;
-    if(!id) return;
-    e.stopPropagation();
-    // hide others
-    document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden'));
-    const menu = document.getElementById(`menu-${id}`);
-    if(menu) menu.classList.toggle('hidden');
-  });
-
-  // close menus clicking outside
-  document.addEventListener('click', ()=>{ document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); });
 
   formVeiculos.addEventListener('submit', async (ev)=>{
     ev.preventDefault();
@@ -350,11 +361,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
     salvarLocal(keyFor('veiculos'), registrosVeiculos);
     renderVeiculos();
     formVeiculos.reset();
-    document.getElementById('msgVeiculo').classList.remove('hidden');
-    setTimeout(()=>document.getElementById('msgVeiculo').classList.add('hidden'),1600);
 
-    // enviar ao Web App
-    await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro:novo });
+    // enviar ao Web App e mostrar confirmação somente se ok
+    const resp = await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro:novo });
+    if(resp && resp.ok){
+      showTemp('msgVeiculo');
+    } else {
+      // se houve erro já alertado em enviarAoWebApp; manter salvo local
+    }
   });
 
   /* ---------- edição / exclusão veículos (modal) ---------- */
@@ -395,7 +409,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     renderVeiculos();
     modalEdit.classList.add('hidden');
 
-    await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro: registrosVeiculos[idx] });
+    const resp = await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro: registrosVeiculos[idx] });
+    if(resp && resp.ok) showTemp('msgVeiculo');
     currentEditId = null;
   });
 
@@ -404,11 +419,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     registrosVeiculos = registrosVeiculos.filter(r=>r.id!==id);
     salvarLocal(keyFor('veiculos'), registrosVeiculos);
     renderVeiculos();
-
     enviarAoWebApp({ acao:'excluir_veiculo', data:selectedDate, id });
   }
 
-  /* ---------- bicicleta (construção da tabela + eventos) ---------- */
+  /* ---------- BICICLETA ---------- */
   const bicicletaTableEl = document.getElementById('bicicletaTable');
   const mediaEl = document.getElementById('mediaBicicleta');
   const anotacoesEl = document.getElementById('anotacoesBicicleta');
@@ -446,8 +460,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     anotacoesEl.addEventListener('input', ()=>{
       bicicletaData.anotacoes = anotacoesEl.value;
       salvarLocal(keyFor('bicicleta'), bicicletaData);
-      document.getElementById('msgBic').classList.remove('hidden');
-      setTimeout(()=>document.getElementById('msgBic').classList.add('hidden'),1200);
+      showTemp('msgBic');
     });
   }
 
@@ -457,8 +470,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('btnCompartilhar').addEventListener('click', async ()=>{
     try{
       const el=document.getElementById('bicicletaCard');
-      const imgs=el.querySelectorAll('img');
-      await Promise.all(Array.from(imgs).map(img=> img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r})));
+      await Promise.all(Array.from(el.querySelectorAll('img')).map(img=> img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r})));
       const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
       const blob = await new Promise(r=>canvas.toBlob(r,'image/png'));
       const fileName = `bicicleta_${selectedDate}_${new Date().toISOString().slice(11,19).replace(/:/g,'-')}.png`;
@@ -471,11 +483,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   document.getElementById('btnSalvarBicicleta').addEventListener('click', async ()=>{
     const payload = { acao:'salvar_bicicleta', data:selectedDate, registro: bicicletaData };
-    const res = await enviarAoWebApp(payload);
-    if(res) { document.getElementById('msgSalvarBic').classList.remove('hidden'); setTimeout(()=>document.getElementById('msgSalvarBic').classList.add('hidden'),1200); }
+    const resp = await enviarAoWebApp(payload);
+    if(resp && resp.ok) showTemp('msgSalvarBic');
   });
 
-  /* ---------- Fechamento ---------- */
+  /* ---------- FECHAMENTO (agora com menu de editar/excluir nas listagens) ---------- */
   const formFechamento = document.getElementById('formFechamento');
   const listaFechamentos = document.getElementById('listaFechamentos');
   let fechamentos = [];
@@ -485,22 +497,45 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(!fechamentos.length){ listaFechamentos.innerHTML='<p class="text-sm text-gray-600">Nenhum fechamento salvo para a data selecionada.</p>'; return; }
     fechamentos.forEach(r=>{
       const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
-      const altLabel = document.createElement('div'); altLabel.className='text-sm'; const s= document.createElement('strong'); s.textContent='Alterações nos terminais: '; altLabel.appendChild(s);
-      const altText = document.createElement('div'); altText.className='text-sm preserve'; altText.textContent = r.alteracoes || '';
-      div.appendChild(altLabel); div.appendChild(altText);
-      const cred = document.createElement('div'); cred.className='text-sm'; cred.textContent = `Credencial na guarita: ${r.credencial ? 'Sim':'Não'}`; div.appendChild(cred);
-      const chave = document.createElement('div'); chave.className='text-sm'; chave.textContent = `Chave na guarita: ${r.chave ? 'Sim':'Não'}`; div.appendChild(chave);
-      const he = document.createElement('div'); he.className='text-sm'; he.textContent = `Hora fechamento entrada: ${r.horaEntrada||''}`; div.appendChild(he);
-      const hs = document.createElement('div'); hs.className='text-sm'; hs.textContent = `Hora fechamento saída: ${r.horaSaida||''}`; div.appendChild(hs);
-      const hp = document.createElement('div'); hp.className='text-sm'; hp.textContent = `Hora fechamento pedestre: ${r.horaPedestre||''}`; div.appendChild(hp);
+      div.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="text-sm font-semibold">Alterações</div>
+            <div class="text-sm preserve mt-1">${escapeHTML(r.alteracoes||'')}</div>
+            <div class="text-sm mt-2">Credencial: ${(r.credencial? 'Sim':'Não')} • Chave: ${(r.chave? 'Sim':'Não')}</div>
+            <div class="text-sm mt-1">Horas: ${r.horaEntrada||''} / ${r.horaSaida||''} / ${r.horaPedestre||''}</div>
+          </div>
+          <div class="relative inline-block">
+            <button class="dots-fechamento text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}">⋮</button>
+            <div id="menu-fech-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
+              <button class="block w-full text-left px-3 py-2 edit-fech" data-id="${r.id}">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-fech" data-id="${r.id}">Excluir</button>
+            </div>
+          </div>
+        </div>`;
       listaFechamentos.appendChild(div);
     });
   }
 
+  // handlers menu fechamento
+  listaFechamentos.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.dots-fechamento');
+    if(btn){
+      const id = btn.dataset.id;
+      document.querySelectorAll('[id^="menu-fech-"]').forEach(m=>m.classList.add('hidden'));
+      const menu = document.getElementById(`menu-fech-${id}`);
+      if(menu) menu.classList.toggle('hidden');
+      return;
+    }
+    const edit = e.target.closest('.edit-fech');
+    if(edit){ editarFechamento(edit.dataset.id); return; }
+    const del = e.target.closest('.del-fech');
+    if(del){ excluirFechamento(del.dataset.id); return; }
+  });
+
   formFechamento.addEventListener('submit', async (ev)=>{
     ev.preventDefault();
-    const ta = document.getElementById('alteracoesTerminais');
-    const raw = ta.value || '';
+    const raw = document.getElementById('alteracoesTerminais').value || '';
     const credencial = document.getElementById('credencialGuarita').checked;
     const chave = document.getElementById('chaveGuarita').checked;
     const horaEntrada = document.getElementById('horaFechEntrada').value;
@@ -511,13 +546,36 @@ document.addEventListener('DOMContentLoaded', ()=>{
     salvarLocal(keyFor('fechamento'), fechamentos);
     renderFechamentos();
     formFechamento.reset();
-    document.getElementById('msgFech').classList.remove('hidden');
-    setTimeout(()=>document.getElementById('msgFech').classList.add('hidden'),1200);
 
-    await enviarAoWebApp({ acao:'salvar_fechamento', data:selectedDate, registro: rec });
+    const resp = await enviarAoWebApp({ acao:'salvar_fechamento', data:selectedDate, registro: rec });
+    if(resp && resp.ok) showTemp('msgFech');
   });
 
-  /* ---------- Relatórios ---------- */
+  function editarFechamento(id){
+    const rec = fechamentos.find(x=>x.id===id);
+    if(!rec) return;
+    // preencher form para edição (simples: remover e reabrir com dados)
+    document.getElementById('alteracoesTerminais').value = rec.alteracoes || '';
+    document.getElementById('credencialGuarita').checked = !!rec.credencial;
+    document.getElementById('chaveGuarita').checked = !!rec.chave;
+    document.getElementById('horaFechEntrada').value = rec.horaEntrada || '';
+    document.getElementById('horaFechSaida').value = rec.horaSaida || '';
+    document.getElementById('horaFechPedestre').value = rec.horaPedestre || '';
+    // remove item antigo
+    fechamentos = fechamentos.filter(x=>x.id!==id);
+    salvarLocal(keyFor('fechamento'), fechamentos);
+    renderFechamentos();
+  }
+
+  function excluirFechamento(id){
+    if(!confirm('Excluir este fechamento?')) return;
+    fechamentos = fechamentos.filter(x=>x.id!==id);
+    salvarLocal(keyFor('fechamento'), fechamentos);
+    renderFechamentos();
+    enviarAoWebApp({ acao:'excluir_fechamento', data:selectedDate, id });
+  }
+
+  /* ---------- RELATÓRIO (menu em listagem) ---------- */
   const formRelatorio = document.getElementById('formRelatorio');
   const listaRelatorios = document.getElementById('listaRelatorios');
   let relatorios = [];
@@ -527,15 +585,39 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600">Nenhum relatório para a data selecionada.</p>'; return; }
     relatorios.forEach(r=>{
       const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
-      const nome = document.createElement('div'); nome.className='text-sm'; nome.textContent = `Nome: ${r.nome}`; div.appendChild(nome);
-      const data = document.createElement('div'); data.className='text-sm'; data.textContent = `Data: ${r.data}`; div.appendChild(data);
-      const turnoLabel = r.turno === '08-20' ? '08:00 - 20:00' : (r.turno === '11-23' ? '11:00 - 23:00' : '13:00 - 01:00');
-      const turnoDiv = document.createElement('div'); turnoDiv.className='text-sm'; turnoDiv.textContent = `Turno: ${turnoLabel}`; div.appendChild(turnoDiv);
-      const infoLabel = document.createElement('div'); infoLabel.className='text-sm'; const s=document.createElement('strong'); s.textContent='Informações: '; infoLabel.appendChild(s);
-      const infoText = document.createElement('div'); infoText.className='text-sm preserve'; infoText.textContent = r.info || ''; div.appendChild(infoLabel); div.appendChild(infoText);
+      div.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="text-sm font-semibold">Nome: ${escapeHTML(r.nome||'')}</div>
+            <div class="text-sm">Data: ${escapeHTML(r.data||'')}</div>
+            <div class="text-sm preserve mt-1">${escapeHTML(r.info||'')}</div>
+          </div>
+          <div class="relative inline-block">
+            <button class="dots-rel text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}">⋮</button>
+            <div id="menu-rel-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
+              <button class="block w-full text-left px-3 py-2 edit-rel" data-id="${r.id}">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-rel" data-id="${r.id}">Excluir</button>
+            </div>
+          </div>
+        </div>`;
       listaRelatorios.appendChild(div);
     });
   }
+
+  listaRelatorios.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.dots-rel');
+    if(btn){
+      const id = btn.dataset.id;
+      document.querySelectorAll('[id^="menu-rel-"]').forEach(m=>m.classList.add('hidden'));
+      const menu = document.getElementById(`menu-rel-${id}`);
+      if(menu) menu.classList.toggle('hidden');
+      return;
+    }
+    const edit = e.target.closest('.edit-rel');
+    if(edit){ editarRelatorio(edit.dataset.id); return; }
+    const del = e.target.closest('.del-rel');
+    if(del){ excluirRelatorio(del.dataset.id); return; }
+  });
 
   formRelatorio.addEventListener('submit', async (ev)=>{
     ev.preventDefault();
@@ -543,21 +625,109 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(!nome){ alert('Informe o nome.'); return; }
     const data = document.getElementById('relData').value || selectedDate;
     const turno = document.getElementById('relTurno').value;
-    const ta = document.getElementById('relInfo');
-    const raw = ta.value || '';
-    const rec = { id: genId(), nome, data, turno, info: raw, timestamp: new Date().toISOString() };
+    const info = document.getElementById('relInfo').value || '';
+    const rec = { id: genId(), nome, data, turno, info, timestamp: new Date().toISOString() };
     relatorios.push(rec);
     salvarLocal(keyFor('relatorio'), relatorios);
     renderRelatorios();
     formRelatorio.reset();
     document.getElementById('relData').value = selectedDate;
-    document.getElementById('msgRel').classList.remove('hidden');
-    setTimeout(()=>document.getElementById('msgRel').classList.add('hidden'),1200);
 
-    await enviarAoWebApp({ acao:'salvar_relatorio', data:selectedDate, registro: rec });
+    const resp = await enviarAoWebApp({ acao:'salvar_relatorio', data:selectedDate, registro: rec });
+    if(resp && resp.ok) showTemp('msgRel');
   });
 
-  /* ---------- Upload de fotos: preview + envio ao Apps Script ---------- */
+  function editarRelatorio(id){
+    const r = relatorios.find(x=>x.id===id);
+    if(!r) return;
+    document.getElementById('relNome').value = r.nome || '';
+    document.getElementById('relData').value = r.data || selectedDate;
+    document.getElementById('relTurno').value = r.turno || '08-20';
+    document.getElementById('relInfo').value = r.info || '';
+    relatorios = relatorios.filter(x=>x.id!==id);
+    salvarLocal(keyFor('relatorio'), relatorios);
+    renderRelatorios();
+  }
+
+  function excluirRelatorio(id){
+    if(!confirm('Excluir este relatório?')) return;
+    relatorios = relatorios.filter(x=>x.id!==id);
+    salvarLocal(keyFor('relatorio'), relatorios);
+    renderRelatorios();
+    enviarAoWebApp({ acao:'excluir_relatorio', data:selectedDate, id });
+  }
+
+  /* ---------- INFORMAÇÕES supervisor (lista com menu) ---------- */
+  const btnSalvarInfo = document.getElementById('btnSalvarInfo');
+  const listaInfo = document.getElementById('listaInfo');
+  let infos = [];
+
+  function renderInfos(){
+    listaInfo.innerHTML='';
+    if(!infos.length){ listaInfo.innerHTML='<p class="text-sm text-gray-600">Nenhuma informação salva.</p>'; return; }
+    infos.forEach(r=>{
+      const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
+      div.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div><div class="text-sm preserve">${escapeHTML(r.descricao||'')}</div><div class="text-xs text-gray-500 mt-1">${r.timestamp||''}</div></div>
+          <div class="relative inline-block">
+            <button class="dots-info text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}">⋮</button>
+            <div id="menu-info-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
+              <button class="block w-full text-left px-3 py-2 edit-info" data-id="${r.id}">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-info" data-id="${r.id}">Excluir</button>
+            </div>
+          </div>
+        </div>`;
+      listaInfo.appendChild(div);
+    });
+  }
+
+  listaInfo.addEventListener('click',(e)=>{
+    const btn = e.target.closest('.dots-info');
+    if(btn){
+      const id = btn.dataset.id;
+      document.querySelectorAll('[id^="menu-info-"]').forEach(m=>m.classList.add('hidden'));
+      const menu = document.getElementById(`menu-info-${id}`);
+      if(menu) menu.classList.toggle('hidden');
+      return;
+    }
+    const edit = e.target.closest('.edit-info');
+    if(edit){ editarInfo(edit.dataset.id); return; }
+    const del = e.target.closest('.del-info');
+    if(del){ excluirInfo(del.dataset.id); return; }
+  });
+
+  btnSalvarInfo.addEventListener('click', async ()=>{
+    const descricao = document.getElementById('infoDescricao').value.trim();
+    if(!descricao){ alert('Escreva algo antes de salvar.'); return; }
+    const rec = { id: genId(), descricao, timestamp: new Date().toISOString() };
+    infos.push(rec);
+    salvarLocal(keyFor('info'), infos);
+    renderInfos();
+    document.getElementById('infoDescricao').value = '';
+
+    const resp = await enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' });
+    if(resp && resp.ok) showTemp('msgInfo');
+  });
+
+  function editarInfo(id){
+    const r = infos.find(x=>x.id===id);
+    if(!r) return;
+    document.getElementById('infoDescricao').value = r.descricao || '';
+    infos = infos.filter(x=>x.id!==id);
+    salvarLocal(keyFor('info'), infos);
+    renderInfos();
+  }
+
+  function excluirInfo(id){
+    if(!confirm('Excluir esta informação?')) return;
+    infos = infos.filter(x=>x.id!==id);
+    salvarLocal(keyFor('info'), infos);
+    renderInfos();
+    enviarAoWebApp({ acao:'excluir_informacoes', data:selectedDate, id });
+  }
+
+  /* ---------- Upload de fotos: preview + envio ao Apps Script (com feedback visível) ---------- */
   function setupPhotoUpload(inputId, previewContainerId, sectionLabel, extraDataFn){
     const input = document.getElementById(inputId);
     const preview = document.getElementById(previewContainerId);
@@ -579,22 +749,17 @@ document.addEventListener('DOMContentLoaded', ()=>{
           secao: sectionLabel,
           meta: extraDataFn ? extraDataFn() : {}
         };
-        try{
-          const resp = await fetch(WEBAPP_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ acao:'salvar_imagem', payload })
-          });
-          const text = await resp.text();
-          alert("Foto salva no Google Drive: " + text);
-        }catch(err){
-          console.error(err);
-          alert("Erro ao enviar foto para o Google Drive.");
+        const resp = await enviarAoWebApp({ acao:'salvar_imagem', payload });
+        if(resp && resp.ok){
+          alert('Foto salva no Google Drive: ' + resp.text);
+        } else {
+          // já exibimos erro em enviarAoWebApp; manter preview local
         }
       };
       reader.readAsDataURL(file);
     });
   }
+
   setupPhotoUpload("fotoBicicleta","previewBicicleta","bicicleta", ()=>({ anotacoes: document.getElementById('anotacoesBicicleta')?.value || '' }));
   setupPhotoUpload("fotoFechamento","previewFechamento","fechamento", ()=>({
     alteracoes: document.getElementById('alteracoesTerminais')?.value || '',
@@ -613,32 +778,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
     descricao: document.getElementById('infoDescricao')?.value || ''
   }));
 
-  /* ---------- botão salvar Informações supervisor ---------- */
-  document.getElementById('btnSalvarInfo').addEventListener('click', async ()=>{
-    const descricao = document.getElementById('infoDescricao').value.trim();
-    if(!descricao){ alert('Escreva algo antes de salvar.'); return; }
-    const rec = { id: genId(), descricao, timestamp: new Date().toISOString() };
-    salvarLocal(keyFor('info'), rec);
-    document.getElementById('msgInfo').classList.remove('hidden');
-    setTimeout(()=>document.getElementById('msgInfo').classList.add('hidden'),1600);
-    await enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' });
-  });
-
-  /* ---------- helper para enviar ao WebApp ---------- */
-  async function enviarAoWebApp(obj){
-    if(!WEBAPP_URL || WEBAPP_URL.includes('COLE_AQUI')) return null;
-    try{
-      const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(obj) });
-      const text = await resp.text();
-      console.log('WebApp response:', text);
-      return text;
-    }catch(err){
-      console.error('Erro ao enviar ao WebApp:', err);
-      return null;
-    }
+  /* ---------- Auxiliares: load / showTemp / init ---------- */
+  function showTemp(id, ms=1400){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.remove('hidden');
+    setTimeout(()=>el.classList.add('hidden'), ms);
   }
 
-  /* ---------- load / init ---------- */
   function loadAllData(){
     registrosVeiculos = carregarLocal(keyFor('veiculos'), []);
     renderVeiculos();
@@ -648,19 +795,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
     renderFechamentos();
     relatorios = carregarLocal(keyFor('relatorio'), []);
     renderRelatorios();
+    infos = carregarLocal(keyFor('info'), []);
+    renderInfos();
     const infoLocal = carregarLocal(keyFor('info'), null);
     if(infoLocal && infoLocal.descricao) document.getElementById('infoDescricao').value = infoLocal.descricao;
-    // set relData if present
     const relDataEl=document.getElementById('relData'); if(relDataEl) relDataEl.value = selectedDate;
   }
   loadAllData();
 
+  // fechar menus com Esc
   document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElementById('modalEdit').classList.add('hidden'); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); } });
-
-  /* export functions for inline handlers (if needed) */
-  window.abrirMenuRegistro = function(e,id){ abrirMenuRegistro(e,id); };
-  window.abrirEditar = abrirEditar;
-  window.excluirRegistro = excluirRegistro;
 
 }); // end DOMContentLoaded
 </script>
