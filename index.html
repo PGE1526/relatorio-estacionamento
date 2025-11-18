@@ -15,7 +15,7 @@
     .preview-grid{display:flex; flex-wrap:wrap; gap:10px}
     .tabs-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .tabs-row { display:flex; gap:8px; padding:6px; }
-    .tabs-row button { flex: 0 0 auto; white-space:nowrap; }
+    .tabs-row button { flex: 0 0 auto; white-space:nowrap; cursor:pointer; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -24,12 +24,12 @@
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
       <div>
         <h1 class="text-lg font-bold">Relatório diário PGE</h1>
-        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações supervisor</p>
+        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento P4, Relatório do operador, Informações do supervisor</p>
       </div>
       <div class="flex items-center gap-2">
-        <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Dia anterior">◀</button>
+        <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Dia anterior" type="button">◀</button>
         <input id="datePicker" type="date" class="border rounded px-3 py-2 bg-white" />
-        <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Próximo dia">▶</button>
+        <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Próximo dia" type="button">▶</button>
       </div>
     </div>
   </header>
@@ -39,11 +39,11 @@
     <nav class="bg-white rounded shadow p-0">
       <div class="tabs-scroll" id="tabsScroll">
         <div class="tabs-row" role="tablist" aria-label="Navegação principal">
-          <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold" role="tab">Veículos</button>
-          <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Bicicleta</button>
-          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Fechamento</button>
-          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Relatório</button>
-          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Informações</button>
+          <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold" role="tab" type="button">Veículos</button>
+          <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Bicicleta</button>
+          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Fechamento P4</button>
+          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Relatório do operador</button>
+          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Informações do supervisor</button>
         </div>
       </div>
     </nav>
@@ -56,7 +56,14 @@
           <form id="formVeiculos" class="space-y-3" novalidate>
             <div>
               <label class="block text-sm font-medium mb-1">Placa</label>
-              <input type="text" id="placaInput" maxlength="8" class="w-full border rounded px-3 py-2" placeholder="ABC-1234" autocomplete="off">
+              <!-- datalist para manter opções de placa + permitir digitar -->
+              <input list="placasList" type="text" id="placaInput" maxlength="8" class="w-full border rounded px-3 py-2" placeholder="ABC-1234" autocomplete="off" />
+              <datalist id="placasList">
+                <option value="ABC-1234"></option>
+                <option value="DEF-5678"></option>
+                <option value="GHI-9012"></option>
+                <!-- O usuário pode adicionar mais opções editando aqui -->
+              </datalist>
               <p id="placaErro" class="hidden text-sm text-red-600 mt-1">Placa inválida.</p>
             </div>
             <div><label class="block text-sm font-medium mb-1">Hora</label><input type="time" id="horaInput" class="w-full border rounded px-3 py-2"></div>
@@ -120,7 +127,7 @@
     <!-- Fechamento -->
     <section id="fechamento" class="tabcontent hidden" aria-labelledby="tabFechamentoBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
-        <h2 class="font-semibold">Fechamento da P4</h2>
+        <h2 class="font-semibold">Fechamento P4</h2>
         <form id="formFechamento" class="space-y-3" novalidate>
           <div><label class="block text-sm font-medium mb-1">Alterações nos terminais</label><textarea id="alteracoesTerminais" rows="4" class="w-full border rounded px-3 py-2" placeholder="Descreva alterações..."></textarea></div>
           <div class="flex gap-6"><label class="inline-flex items-center gap-2"><input type="checkbox" id="credencialGuarita"> Credencial está na guarita</label><label class="inline-flex items-center gap-2"><input type="checkbox" id="chaveGuarita"> Chave está na guarita</label></div>
@@ -145,7 +152,7 @@
     <!-- Relatório -->
     <section id="relatorio" class="tabcontent hidden" aria-labelledby="tabRelatorioBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
-        <h2 class="font-semibold">Relatório diário operador</h2>
+        <h2 class="font-semibold">Relatório do operador</h2>
         <form id="formRelatorio" class="space-y-3" novalidate>
           <div><label class="block text-sm font medium mb-1">Nome</label><input type="text" id="relNome" class="w-full border rounded px-3 py-2"></div>
           <div><label class="block text-sm font-medium mb-1">Data</label><input type="date" id="relData" class="w-full border rounded px-3 py-2"></div>
@@ -167,7 +174,7 @@
     <!-- Informações supervisor -->
     <section id="info" class="tabcontent hidden" aria-labelledby="tabInfoBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
-        <h2 class="font-semibold">Informações supervisor</h2>
+        <h2 class="font-semibold">Informações do supervisor</h2>
         <p class="text-sm text-gray-600">Adicione fotos gerais do dia e observações do supervisor. Clique em Salvar Informações para gravar no Drive.</p>
 
         <div>
@@ -201,7 +208,7 @@
         <div><label class="block text-sm font-medium mb-1">Hora</label><input id="editHora" type="time" class="w-full border rounded px-3 py-2"></div>
         <div><label class="block text-sm font-medium mb-1">Motivo</label><input id="editMotivo" class="w-full border rounded px-3 py-2"></div>
         <div><label class="block text-sm font-medium mb-1">Operador</label><input id="editOperador" class="w-full border rounded px-3 py-2"></div>
-        <div class="flex justify-end gap-3 mt-2"><button id="btnCancelEdit" class="px-4 py-2 rounded border">Cancelar</button><button id="btnSaveEdit" class="px-4 py-2 rounded bg-blue-600 text-white">Salvar</button></div>
+        <div class="flex justify-end gap-3 mt-2"><button id="btnCancelEdit" class="px-4 py-2 rounded border" type="button">Cancelar</button><button id="btnSaveEdit" class="px-4 py-2 rounded bg-blue-600 text-white" type="button">Salvar</button></div>
       </div>
     </div>
   </div>
@@ -258,7 +265,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     Object.values(tabContents).forEach(c=>c.classList.add('hidden'));
     tabContents[name].classList.remove('hidden');
     if(evt&&evt.currentTarget) setActiveTabButton(evt.currentTarget);
-    try{ evt.currentTarget.scrollIntoView({inline:'center', behavior:'smooth'}); }catch(e){}
+    try{ if(evt && evt.currentTarget) evt.currentTarget.scrollIntoView({inline:'center', behavior:'smooth'}); }catch(e){}
   }
   tabs.veiculosBtn.addEventListener('click', e=>openTab(e,'veiculos'));
   tabs.bicicletaBtn.addEventListener('click', e=>openTab(e,'bicicleta'));
@@ -325,10 +332,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
         <td class="border px-3 py-2 text-sm">${escapeHTML(r.operador)}</td>
         <td class="border px-3 py-2 text-center">
           <div class="relative inline-block">
-            <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100 dots-btn" data-id="${r.id}" aria-label="Abrir opções">⋮</button>
+            <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100 dots-btn" data-id="${r.id}" aria-label="Abrir opções" type="button">⋮</button>
             <div id="menu-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 edit-btn" data-id="${r.id}">Editar</button>
-              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600 del-btn" data-id="${r.id}">Excluir</button>
+              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 edit-btn" data-id="${r.id}" type="button">Editar</button>
+              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600 del-btn" data-id="${r.id}" type="button">Excluir</button>
             </div>
           </div>
         </td>`;
@@ -508,10 +515,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
             <div class="text-sm mt-1">Horas: ${r.horaEntrada||''} / ${r.horaSaida||''} / ${r.horaPedestre||''}</div>
           </div>
           <div class="relative inline-block">
-            <button class="dots-fechamento text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}">⋮</button>
+            <button class="dots-fechamento text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" type="button">⋮</button>
             <div id="menu-fech-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-              <button class="block w-full text-left px-3 py-2 edit-fech" data-id="${r.id}">Editar</button>
-              <button class="block w-full text-left px-3 py-2 text-red-600 del-fech" data-id="${r.id}">Excluir</button>
+              <button class="block w-full text-left px-3 py-2 edit-fech" data-id="${r.id}" type="button">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-fech" data-id="${r.id}" type="button">Excluir</button>
             </div>
           </div>
         </div>`;
@@ -593,10 +600,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
             <div class="text-sm preserve mt-1">${escapeHTML(r.info||'')}</div>
           </div>
           <div class="relative inline-block">
-            <button class="dots-rel text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}">⋮</button>
+            <button class="dots-rel text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" type="button">⋮</button>
             <div id="menu-rel-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-              <button class="block w-full text-left px-3 py-2 edit-rel" data-id="${r.id}">Editar</button>
-              <button class="block w-full text-left px-3 py-2 text-red-600 del-rel" data-id="${r.id}">Excluir</button>
+              <button class="block w-full text-left px-3 py-2 edit-rel" data-id="${r.id}" type="button">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-rel" data-id="${r.id}" type="button">Excluir</button>
             </div>
           </div>
         </div>`;
@@ -664,17 +671,17 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   function renderInfos(){
     listaInfo.innerHTML='';
-    if(!infos.length){ listaInfo.innerHTML='<p class="text-sm text-gray-600'>Nenhuma informação salva.</p>'; return; }
+    if(!infos.length){ listaInfo.innerHTML='<p class="text-sm text-gray-600">Nenhuma informação salva.</p>'; return; }
     infos.forEach(r=>{
       const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
       div.innerHTML = `
         <div class="flex justify-between items-start">
           <div><div class="text-sm preserve">${escapeHTML(r.descricao||'')}</div><div class="text-xs text-gray-500 mt-1">${r.timestamp||''}</div></div>
           <div class="relative inline-block">
-            <button class="dots-info text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}">⋮</button>
+            <button class="dots-info text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" type="button">⋮</button>
             <div id="menu-info-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-              <button class="block w-full text-left px-3 py-2 edit-info" data-id="${r.id}">Editar</button>
-              <button class="block w-full text-left px-3 py-2 text-red-600 del-info" data-id="${r.id}">Excluir</button>
+              <button class="block w-full text-left px-3 py-2 edit-info" data-id="${r.id}" type="button">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-info" data-id="${r.id}" type="button">Excluir</button>
             </div>
           </div>
         </div>`;
@@ -751,7 +758,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         };
         const resp = await enviarAoWebApp({ acao:'salvar_imagem', payload });
         if(resp && resp.ok){
-          alert('Foto salva no Google Drive: ' + resp.url || resp.text);
+          alert('Foto salva no Google Drive: ' + (resp.url || resp.text));
         }
       };
       reader.readAsDataURL(file);
