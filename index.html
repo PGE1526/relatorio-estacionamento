@@ -1,284 +1,818 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<title>Relatório PGE</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8" />
+  <title>Relatório diário PGE</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    main{position:relative;z-index:10}
+    .preserve{white-space:pre-wrap; word-break:break-word}
+    .menu,#modalEdit{z-index:60}
+    textarea, input { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; font-size:14px; line-height:1.4; }
+    .preview-img{max-width:160px; border-radius:6px; box-shadow:0 0 6px rgba(0,0,0,0.08)}
+    .preview-grid{display:flex; flex-wrap:wrap; gap:10px}
+    .tabs-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .tabs-row { display:flex; gap:8px; padding:6px; }
+    .tabs-row button { flex: 0 0 auto; white-space:nowrap; cursor:pointer; }
+    .hidden{display:none}
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
 
-<style>
-.tab-active {
-    background-color: #1d4ed8 !important;
-    color: white !important;
-}
-.hidden { display: none; }
-</style>
+  <header class="bg-white shadow-sm sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-lg font-bold">Relatório diário PGE</h1>
+        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento P4, Relatório do operador, Informações do supervisor</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Dia anterior" type="button">◀</button>
+        <input id="datePicker" type="date" class="border rounded px-3 py-2 bg-white" />
+        <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Próximo dia" type="button">▶</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+
+    <nav class="bg-white rounded shadow p-0">
+      <div class="tabs-scroll" id="tabsScroll">
+        <div class="tabs-row" role="tablist" aria-label="Navegação principal">
+          <!-- Ordem correta conforme pedido -->
+          <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold" role="tab" type="button">Veículos</button>
+          <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Bicicleta</button>
+          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Fechamento P4</button>
+          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Relatório do operador</button>
+          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Informações do supervisor</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Veículos -->
+    <section id="veiculos" class="tabcontent" aria-labelledby="tabVeiculosBtn">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white rounded shadow p-4">
+          <h2 class="font-semibold mb-3">Registrar saída</h2>
+          <form id="formVeiculos" class="space-y-3" novalidate>
+            <div>
+              <label class="block text-sm font-medium mb-1">Placa</label>
+              <!-- datalist para manter opções de placa + permitir digitar -->
+              <input list="placasList" type="text" id="placaInput" maxlength="8" class="w-full border rounded px-3 py-2" placeholder="ABC-1234" autocomplete="off" />
+              <datalist id="placasList">
+                <option value="ABC-1234"></option>
+                <option value="DEF-5678"></option>
+                <option value="GHI-9012"></option>
+              </datalist>
+              <p id="placaErro" class="hidden text-sm text-red-600 mt-1">Placa inválida.</p>
+            </div>
+            <div><label class="block text-sm font-medium mb-1">Hora</label><input type="time" id="horaInput" class="w-full border rounded px-3 py-2"></div>
+            <div><label class="block text-sm font-medium mb-1">Motivo</label><input type="text" id="motivoInput" class="w-full border rounded px-3 py-2"></div>
+            <div><label class="block text-sm font-medium mb-1">Operador</label><input type="text" id="operadorInput" class="w-full border rounded px-3 py-2"></div>
+            <div class="flex items-center gap-3"><button id="btnRegistrar" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button><span id="msgVeiculo" class="text-sm text-green-700 hidden">Registro salvo.</span></div>
+          </form>
+        </div>
+
+        <div class="bg-white rounded shadow p-4">
+          <h2 class="font-semibold mb-3">Registros do dia</h2>
+          <div class="overflow-x-auto">
+            <table class="table-auto w-full table-fixed text-sm">
+              <colgroup><col style="width:14%"><col style="width:14%"><col style="width:44%"><col style="width:18%"><col style="width:10%"></colgroup>
+              <thead><tr class="bg-gray-100"><th class="px-3 py-2 text-left">Placa</th><th class="px-3 py-2 text-left">Hora</th><th class="px-3 py-2 text-left">Motivo</th><th class="px-3 py-2 text-left">Operador</th><th class="px-3 py-2 text-left"></th></tr></thead>
+              <tbody id="registrosVeiculosBody" class="align-top"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bicicleta -->
+    <section id="bicicleta" class="tabcontent hidden" aria-labelledby="tabBicicletaBtn">
+      <div id="bicicletaCard" class="bg-white rounded shadow p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-semibold">Controle de Bicicleta</h2>
+          <div class="flex items-center gap-2">
+            <button id="btnCompartilhar" class="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm">Compartilhar</button>
+            <span id="msgBic" class="text-sm text-green-700 hidden">Salvo.</span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="table-auto w-full text-sm">
+            <thead><tr class="bg-gray-100"><th class="px-3 py-2 text-left">Horário</th><th class="px-3 py-2 text-left">Preenchimento</th></tr></thead>
+            <tbody id="bicicletaTable"></tbody>
+          </table>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Anotações</label>
+          <textarea id="anotacoesBicicleta" rows="3" class="w-full border rounded px-3 py-2" placeholder="Ex: bicicleta foi recolhida; corrente colocada..."></textarea>
+        </div>
+
+        <div class="font-semibold">Média dos valores: <span id="mediaBicicleta">0,00</span></div>
+
+        <div class="pt-2 border-t">
+          <label class="block text-sm font-medium mb-1">Foto da Bicicleta</label>
+          <input type="file" id="fotoBicicleta" accept="image/*" capture="environment" class="border rounded px-3 py-2 w-full">
+          <div class="preview-grid mt-3" id="previewBicicleta"></div>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="btnSalvarBicicleta" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar Bicicleta no Drive</button>
+          <span id="msgSalvarBic" class="text-sm text-green-700 hidden">Enviado ao Drive.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fechamento -->
+    <section id="fechamento" class="tabcontent hidden" aria-labelledby="tabFechamentoBtn">
+      <div class="bg-white rounded shadow p-4 space-y-4">
+        <h2 class="font-semibold">Fechamento P4</h2>
+        <form id="formFechamento" class="space-y-3" novalidate>
+          <div><label class="block text-sm font-medium mb-1">Alterações nos terminais</label><textarea id="alteracoesTerminais" rows="4" class="w-full border rounded px-3 py-2" placeholder="Descreva alterações..."></textarea></div>
+          <div class="flex gap-6"><label class="inline-flex items-center gap-2"><input type="checkbox" id="credencialGuarita"> Credencial está na guarita</label><label class="inline-flex items-center gap-2"><input type="checkbox" id="chaveGuarita"> Chave está na guarita</label></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div><label class="block text-sm font-medium mb-1">Horário fechamento entrada</label><input type="time" id="horaFechEntrada" class="w-full border rounded px-3 py-2"></div>
+            <div><label class="block text-sm font-medium mb-1">Horário fechamento saída</label><input type="time" id="horaFechSaida" class="w-full border rounded px-3 py-2"></div>
+            <div><label class="block text-sm font-medium mb-1">Horário fechamento pedestre</label><input type="time" id="horaFechPedestre" class="w-full border rounded px-3 py-2"></div>
+          </div>
+          <div class="flex items-center gap-3"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Salvar Fechamento</button><span id="msgFech" class="text-sm text-green-700 hidden">Salvo.</span></div>
+        </form>
+
+        <div class="mt-2"><h3 class="font-medium mb-2">Fechamentos do dia</h3><div id="listaFechamentos" class="space-y-3"></div></div>
+
+        <div class="pt-2 border-t">
+          <label class="block text-sm font-medium mb-1">Foto do Fechamento</label>
+          <input type="file" id="fotoFechamento" accept="image/*" capture="environment" class="border rounded px-3 py-2 w-full">
+          <div class="preview-grid mt-3" id="previewFechamento"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Relatório -->
+    <section id="relatorio" class="tabcontent hidden" aria-labelledby="tabRelatorioBtn">
+      <div class="bg-white rounded shadow p-4 space-y-4">
+        <h2 class="font-semibold">Relatório do operador</h2>
+        <form id="formRelatorio" class="space-y-3" novalidate>
+          <div><label class="block text-sm font medium mb-1">Nome</label><input type="text" id="relNome" class="w-full border rounded px-3 py-2"></div>
+          <div><label class="block text-sm font-medium mb-1">Data</label><input type="date" id="relData" class="w-full border rounded px-3 py-2"></div>
+          <div><label class="block text-sm font-medium mb-1">Turno</label><select id="relTurno" class="w-full border rounded px-3 py-2"><option value="08-20">08:00 - 20:00</option><option value="11-23">11:00 - 23:00</option><option value="13-01">13:00 - 01:00</option></select></div>
+          <div><label class="block text-sm font-medium mb-1">Informações do dia</label><textarea id="relInfo" rows="6" class="w-full border rounded px-3 py-2" placeholder="Anotações gerais do operador..."></textarea></div>
+          <div class="flex items-center gap-3"><button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">Salvar Relatório</button><span id="msgRel" class="text-sm text-green-700 hidden">Salvo.</span></div>
+        </form>
+
+        <div class="mt-3"><h3 class="font-medium mb-2">Relatórios do dia</h3><div id="listaRelatorios" class="space-y-3"></div></div>
+
+        <div class="pt-2 border-t">
+          <label class="block text-sm font-medium mb-1">Foto do Relatório</label>
+          <input type="file" id="fotoRelatorio" accept="image/*" capture="environment" class="border rounded px-3 py-2 w-full">
+          <div class="preview-grid mt-3" id="previewRelatorio"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Informações supervisor -->
+    <section id="info" class="tabcontent hidden" aria-labelledby="tabInfoBtn">
+      <div class="bg-white rounded shadow p-4 space-y-4">
+        <h2 class="font-semibold">Informações do supervisor</h2>
+        <p class="text-sm text-gray-600">Adicione fotos gerais do dia e observações do supervisor. Clique em Salvar Informações para gravar no Drive.</p>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Foto</label>
+          <input type="file" id="fotoInfo" accept="image/*" capture="environment" class="border rounded px-3 py-2 w-full">
+          <div class="preview-grid mt-3" id="previewInfo"></div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Descrição do supervisor</label>
+          <textarea id="infoDescricao" rows="4" class="w-full border rounded px-3 py-2" placeholder="Observações do supervisor..."></textarea>
+        </div>
+
+        <div class="flex gap-3">
+          <button id="btnSalvarInfo" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar Informações</button>
+          <span id="msgInfo" class="text-sm text-green-700 hidden">Informações salvas.</span>
+        </div>
+
+        <div id="listaInfo" class="mt-3 space-y-3"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal edição veículo -->
+  <div id="modalEdit" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded shadow p-4 w-full max-w-md">
+      <h4 class="font-semibold mb-3">Editar Registro</h4>
+      <div class="space-y-3">
+        <div><label class="block text-sm font-medium mb-1">Placa</label><input id="editPlaca" class="w-full border rounded px-3 py-2" maxlength="8"></div>
+        <div><label class="block text-sm font-medium mb-1">Hora</label><input id="editHora" type="time" class="w-full border rounded px-3 py-2"></div>
+        <div><label class="block text-sm font-medium mb-1">Motivo</label><input id="editMotivo" class="w-full border rounded px-3 py-2"></div>
+        <div><label class="block text-sm font-medium mb-1">Operador</label><input id="editOperador" class="w-full border rounded px-3 py-2"></div>
+        <div class="flex justify-end gap-3 mt-2"><button id="btnCancelEdit" class="px-4 py-2 rounded border" type="button">Cancelar</button><button id="btnSaveEdit" class="px-4 py-2 rounded bg-blue-600 text-white" type="button">Salvar</button></div>
+      </div>
+    </div>
+  </div>
 
 <script>
-// -------------------------------------------------------
-// CONFIGURAÇÃO
-// -------------------------------------------------------
+/* ---------- CONFIG: sua URL do Web App (ATUALIZADA) ---------- */
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycby2Ftp5u1u6nJ5AJdy7gWuzEK7inZvSTT3Tx1IPAVY4tMI9BJpneFHEiAt0l20_eiGv/exec";
 
-// -------------------------------------------------------
-// TROCA DE ABAS
-// -------------------------------------------------------
-function activateTab(tabId) {
-    document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
-    document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("tab-active"));
-    document.getElementById(tabId).classList.remove("hidden");
-    document.getElementById("btn-" + tabId).classList.add("tab-active");
-}
+/* ---------- utilitários e estado ---------- */
+let selectedDate = new Date().toISOString().slice(0,10);
+const datePicker = document.getElementById('datePicker');
+const prevDayBtn = document.getElementById('prevDay');
+const nextDayBtn = document.getElementById('nextDay');
+function keyFor(kind, date = selectedDate){ return `${kind}_${date}`; }
+function salvarLocal(chave, obj){ localStorage.setItem(chave, JSON.stringify(obj)); }
+function carregarLocal(chave, padrao){ const raw = localStorage.getItem(chave); return raw ? JSON.parse(raw) : padrao; }
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function escapeHTML(str=''){ return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-// -------------------------------------------------------
-// ENVIO AO WEBAPP
-// -------------------------------------------------------
-async function enviar(acao, payload) {
-    const body = JSON.stringify({ acao, payload });
+/* ---------- inicialização após DOM pronto ---------- */
+document.addEventListener('DOMContentLoaded', ()=>{
 
-    try {
-        const res = await fetch(WEBAPP_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body
-        });
+  // date controls
+  function setDate(d){ selectedDate = d; datePicker.value = d; loadAllData(); const relDataEl=document.getElementById('relData'); if(relDataEl) relDataEl.value = d; }
+  datePicker.addEventListener('change', e=> setDate(e.target.value));
+  prevDayBtn.addEventListener('click', ()=>{ const d=new Date(selectedDate); d.setDate(d.getDate()-1); setDate(d.toISOString().slice(0,10)); });
+  nextDayBtn.addEventListener('click', ()=>{ const d=new Date(selectedDate); d.setDate(d.getDate()+1); setDate(d.toISOString().slice(0,10)); });
+  datePicker.value = selectedDate;
 
-        alert("Registro enviado com sucesso.");
-    } catch (erro) {
-        alert("Erro de rede ao enviar ao WebApp.");
-        console.error(erro);
-    }
-}
-
-// -------------------------------------------------------
-// SUBMISSÕES
-// -------------------------------------------------------
-function salvarVeiculo() {
-    const dado = {
-        placa: document.getElementById("placa").value,
-        hora: document.getElementById("horaSaida").value,
-        motivo: document.getElementById("motivo").value,
-        operador: document.getElementById("operador").value,
-        data: document.getElementById("dataDia").value
-    };
-    enviar("salvar_veiculo", dado);
-}
-
-function salvarBike() {
-    const dado = {
-        anotacoes: document.getElementById("bikeAnotacoes").value,
-        valores: document.getElementById("bikeValores").value.split(","),
-        data: document.getElementById("dataDia").value
-    };
-    enviar("salvar_bicicleta", dado);
-}
-
-function salvarFechamento() {
-    const dado = {
-        alteracoes: document.getElementById("p4Alteracoes").value,
-        credencial: document.getElementById("p4Credencial").checked,
-        chave: document.getElementById("p4Chave").checked,
-        horaEntrada: document.getElementById("p4Entrada").value,
-        horaSaida: document.getElementById("p4Saida").value,
-        horaPedestre: document.getElementById("p4Pedestre").value,
-        data: document.getElementById("dataDia").value
-    };
-    enviar("salvar_fechamento", dado);
-}
-
-function salvarRelatorio() {
-    const dado = {
-        nome: document.getElementById("relNome").value,
-        turno: document.getElementById("relTurno").value,
-        info: document.getElementById("relInfo").value,
-        data: document.getElementById("dataDia").value
-    };
-    enviar("salvar_relatorio", dado);
-}
-
-function salvarInformacoes() {
-    const dado = {
-        descricao: document.getElementById("infoDescricao").value,
-        data: document.getElementById("dataDia").value
-    };
-    enviar("salvar_informacoes", dado);
-}
-
-// -------------------------------------------------------
-// CARREGAMENTO DE REGISTROS DO DIA
-// -------------------------------------------------------
-async function carregarRegistros() {
-    const data = document.getElementById("dataDia").value;
-    const url = WEBAPP_URL + "?action=list&date=" + data;
-
-    try {
-        const resp = await fetch(url);
-        const json = await resp.json();
-        montarTabela(json.records || []);
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-function montarTabela(lista) {
-    const tabela = document.getElementById("tabelaRegistros");
-    tabela.innerHTML = "";
-
-    lista.forEach(r => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td class="border px-2 py-1">${r.tipo}</td>
-            <td class="border px-2 py-1">${r.date}</td>
-            <td class="border px-2 py-1">${r.section}</td>
-            <td class="border px-2 py-1"><a href="${r.url}" target="_blank" class="text-blue-600 underline">Abrir</a></td>
-        `;
-        tabela.appendChild(tr);
+  // tabs
+  const tabs = {
+    veiculosBtn: document.getElementById('tabVeiculosBtn'),
+    bicicletaBtn: document.getElementById('tabBicicletaBtn'),
+    fechamentoBtn: document.getElementById('tabFechamentoBtn'),
+    relatorioBtn: document.getElementById('tabRelatorioBtn'),
+    infoBtn: document.getElementById('tabInfoBtn')
+  };
+  const tabContents = {
+    veiculos: document.getElementById('veiculos'),
+    bicicleta: document.getElementById('bicicleta'),
+    fechamento: document.getElementById('fechamento'),
+    relatorio: document.getElementById('relatorio'),
+    info: document.getElementById('info')
+  };
+  function setActiveTabButton(btn){
+    Object.values(tabs).forEach(b=>{
+      b.classList.remove('bg-blue-600','text-white');
+      b.classList.add('bg-white','text-gray-700','border');
     });
-}
-</script>
+    btn.classList.remove('bg-white','text-gray-700','border');
+    btn.classList.add('bg-blue-600','text-white');
+  }
+  function openTab(evt,name){
+    Object.values(tabContents).forEach(c=>c.classList.add('hidden'));
+    tabContents[name].classList.remove('hidden');
+    if(evt&&evt.currentTarget) setActiveTabButton(evt.currentTarget);
+    try{ if(evt && evt.currentTarget) evt.currentTarget.scrollIntoView({inline:'center', behavior:'smooth'}); }catch(e){}
+  }
+  tabs.veiculosBtn.addEventListener('click', e=>openTab(e,'veiculos'));
+  tabs.bicicletaBtn.addEventListener('click', e=>openTab(e,'bicicleta'));
+  tabs.fechamentoBtn.addEventListener('click', e=>openTab(e,'fechamento'));
+  tabs.relatorioBtn.addEventListener('click', e=>openTab(e,'relatorio'));
+  tabs.infoBtn.addEventListener('click', e=>openTab(e,'info'));
+  setActiveTabButton(tabs.veiculosBtn);
+  tabContents.veiculos.classList.remove('hidden');
 
-</head>
+  /* ---------- Função para enviar ao Web App (text/plain to avoid preflight) ---------- */
+  async function enviarAoWebApp(obj){
+    if(!WEBAPP_URL || WEBAPP_URL.includes('COLE_AQUI')) {
+      console.warn('WEBAPP_URL não configurada');
+      return null;
+    }
+    try{
+      const resp = await fetch(WEBAPP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify(obj)
+      });
+      const text = await resp.text();
+      if(!resp.ok){
+        console.error('WebApp retornou erro', resp.status, text);
+        alert('Erro do WebApp: HTTP ' + resp.status + ' — ' + text);
+        return { ok:false, status:resp.status, text };
+      }
+      try { return JSON.parse(text); } catch(e) { return { ok:true, text }; }
+    }catch(err){
+      console.error('Erro de rede ao chamar WebApp', err);
+      alert('Erro de rede ao enviar ao Web App. Veja o console para mais detalhes.');
+      return { ok:false, error: String(err) };
+    }
+  }
 
-<body class="bg-gray-100 min-h-screen">
+  /* ---------- VEÍCULOS (CRUD + UI) ---------- */
+  const placaInput = document.getElementById('placaInput');
+  const placaErro = document.getElementById('placaErro');
+  const regexPlaca = /^[A-Z]{3}-\d[A-Z0-9]\d{2}$/;
+  const formVeiculos = document.getElementById('formVeiculos');
+  const registrosVeiculosBody = document.getElementById('registrosVeiculosBody');
+  let registrosVeiculos = [];
 
-<div class="max-w-5xl mx-auto p-4">
+  placaInput.addEventListener('input', e=>{
+    let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(v.length>3) v = v.slice(0,3)+'-'+v.slice(3,7);
+    e.target.value = v.slice(0,8);
+    placaErro.classList.add('hidden'); placaInput.classList.remove('border-red-500');
+  });
+  function validarPlaca(p){ return regexPlaca.test((p||'').toUpperCase()); }
 
-<h1 class="text-2xl font-bold mb-4">Relatório PGE</h1>
+  function renderVeiculos(){
+    registrosVeiculosBody.innerHTML='';
+    if(!Array.isArray(registrosVeiculos) || !registrosVeiculos.length){
+      registrosVeiculosBody.innerHTML='<tr><td class="px-3 py-6 text-gray-500" colspan="5">Nenhum registro para a data selecionada.</td></tr>';
+      return;
+    }
+    registrosVeiculos.forEach(r=>{
+      const tr=document.createElement('tr'); tr.style.position='relative';
+      tr.innerHTML = `
+        <td class="border px-3 py-2 text-sm">${escapeHTML(r.placa)}</td>
+        <td class="border px-3 py-2 text-sm">${escapeHTML(r.hora)}</td>
+        <td class="border px-3 py-2 text-sm break-words">${escapeHTML(r.motivo)}</td>
+        <td class="border px-3 py-2 text-sm">${escapeHTML(r.operador)}</td>
+        <td class="border px-3 py-2 text-center">
+          <div class="relative inline-block">
+            <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100 dots-btn" data-id="${r.id}" aria-label="Abrir opções" type="button">⋮</button>
+            <div id="menu-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
+              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 edit-btn" data-id="${r.id}" type="button">Editar</button>
+              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600 del-btn" data-id="${r.id}" type="button">Excluir</button>
+            </div>
+          </div>
+        </td>`;
+      registrosVeiculosBody.appendChild(tr);
+    });
+  }
 
-<!-- seleção de data -->
-<div class="mb-4">
-    <label class="font-semibold">Data:</label>
-    <input type="date" id="dataDia" class="px-3 py-2 border rounded" onchange="carregarRegistros()" />
-</div>
+  // tabela veículos handler
+  registrosVeiculosBody.addEventListener('click', async (e)=>{
+    const dots = e.target.closest('.dots-btn');
+    if(dots){
+      const id = dots.dataset.id;
+      document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden'));
+      const menu = document.getElementById(`menu-${id}`);
+      if(menu) menu.classList.toggle('hidden');
+      return;
+    }
+    const edit = e.target.closest('.edit-btn');
+    if(edit){ abrirEditar(edit.dataset.id); return; }
+    const del = e.target.closest('.del-btn');
+    if(del){ excluirRegistro(del.dataset.id); return; }
+  });
 
-<!-- MENU DE ABAS -->
-<div class="flex gap-2 mb-4">
-    <button id="btn-veiculos" class="tab-btn tab-active px-3 py-2 bg-white border rounded" onclick="activateTab('veiculos')">Saída de veículos</button>
-    <button id="btn-bicicleta" class="tab-btn px-3 py-2 bg-white border rounded" onclick="activateTab('bicicleta')">Controle de bicicleta</button>
-    <button id="btn-p4" class="tab-btn px-3 py-2 bg-white border rounded" onclick="activateTab('p4')">Fechamento P4</button>
-    <button id="btn-relatorio" class="tab-btn px-3 py-2 bg-white border rounded" onclick="activateTab('relatorio')">Relatório operador</button>
-    <button id="btn-informacoes" class="tab-btn px-3 py-2 bg-white border rounded" onclick="activateTab('informacoes')">Informações</button>
-</div>
+  formVeiculos.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const placa = placaInput.value.trim().toUpperCase();
+    const hora = document.getElementById('horaInput').value.trim();
+    const motivo = document.getElementById('motivoInput').value.trim();
+    const operador = document.getElementById('operadorInput').value.trim();
+    if(!validarPlaca(placa)){ placaErro.classList.remove('hidden'); placaInput.classList.add('border-red-500'); return; }
+    if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
+    const novo = { id: genId(), placa, hora, motivo, operador, timestamp: new Date().toISOString() };
+    registrosVeiculos.push(novo);
+    salvarLocal(keyFor('veiculos'), registrosVeiculos);
+    renderVeiculos();
+    formVeiculos.reset();
 
-<!-- CONTEÚDO DAS ABAS -->
-<!-- VEÍCULOS -->
-<div id="veiculos" class="tab-content">
-    <div class="bg-white p-4 rounded shadow">
-        <h2 class="font-semibold mb-3">Registrar saída de veículo</h2>
+    // enviar ao Web App e mostrar confirmação somente se ok
+    const resp = await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro:novo });
+    if(resp && resp.ok){
+      showTemp('msgVeiculo');
+    }
+  });
 
-        <label>Placa:</label>
-        <input id="placa" class="border rounded px-3 py-2 w-full mb-2">
+  /* ---------- edição / exclusão veículos (modal) ---------- */
+  const modalEdit = document.getElementById('modalEdit');
+  const editPlaca = document.getElementById('editPlaca');
+  const editHora = document.getElementById('editHora');
+  const editMotivo = document.getElementById('editMotivo');
+  const editOperador = document.getElementById('editOperador');
+  const btnCancelEdit = document.getElementById('btnCancelEdit');
+  const btnSaveEdit = document.getElementById('btnSaveEdit');
+  let currentEditId = null;
 
-        <label>Hora:</label>
-        <input id="horaSaida" type="time" class="border rounded px-3 py-2 w-full mb-2">
+  function abrirEditar(id){
+    const r = registrosVeiculos.find(x=>x.id===id);
+    if(!r) return;
+    currentEditId = id;
+    editPlaca.value = r.placa || '';
+    editHora.value = r.hora || '';
+    editMotivo.value = r.motivo || '';
+    editOperador.value = r.operador || '';
+    modalEdit.classList.remove('hidden');
+  }
 
-        <label>Motivo:</label>
-        <input id="motivo" class="border rounded px-3 py-2 w-full mb-2">
+  btnCancelEdit.addEventListener('click', ()=>{ currentEditId = null; modalEdit.classList.add('hidden'); });
 
-        <label>Operador:</label>
-        <input id="operador" class="border rounded px-3 py-2 w-full mb-3">
+  btnSaveEdit.addEventListener('click', async ()=>{
+    if(!currentEditId) return;
+    const placa = (editPlaca.value||'').trim().toUpperCase();
+    const hora = (editHora.value||'').trim();
+    const motivo = (editMotivo.value||'').trim();
+    const operador = (editOperador.value||'').trim();
+    if(!validarPlaca(placa)){ alert('Placa inválida.'); return; }
+    if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
+    const idx = registrosVeiculos.findIndex(x=>x.id===currentEditId);
+    if(idx===-1){ modalEdit.classList.add('hidden'); return; }
+    registrosVeiculos[idx] = { id: currentEditId, placa, hora, motivo, operador, timestamp: new Date().toISOString() };
+    salvarLocal(keyFor('veiculos'), registrosVeiculos);
+    renderVeiculos();
+    modalEdit.classList.add('hidden');
 
-        <button onclick="salvarVeiculo()" class="px-4 py-2 bg-blue-600 text-white rounded">Registrar</button>
-    </div>
-</div>
+    const resp = await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro: registrosVeiculos[idx] });
+    if(resp && resp.ok) showTemp('msgVeiculo');
+    currentEditId = null;
+  });
 
-<!-- BICICLETA -->
-<div id="bicicleta" class="tab-content hidden">
-    <div class="bg-white p-4 rounded shadow">
-        <h2 class="font-semibold mb-3">Controle de bicicleta</h2>
+  function excluirRegistro(id){
+    if(!confirm('Excluir este registro?')) return;
+    registrosVeiculos = registrosVeiculos.filter(r=>r.id!==id);
+    salvarLocal(keyFor('veiculos'), registrosVeiculos);
+    renderVeiculos();
+    enviarAoWebApp({ acao:'excluir_veiculo', data:selectedDate, id });
+  }
 
-        <label>Anotações:</label>
-        <textarea id="bikeAnotacoes" class="border rounded w-full px-3 py-2 mb-2"></textarea>
+  /* ---------- BICICLETA ---------- */
+  const bicicletaTableEl = document.getElementById('bicicletaTable');
+  const mediaEl = document.getElementById('mediaBicicleta');
+  const anotacoesEl = document.getElementById('anotacoesBicicleta');
+  let bicicletaData = { valores: Array(12).fill(''), anotacoes: '' };
 
-        <label>Valores (separados por vírgula):</label>
-        <input id="bikeValores" class="border rounded px-3 py-2 w-full mb-3">
+  function construirTabelaBicicleta(){
+    bicicletaTableEl.innerHTML = '';
+    for(let i=0;i<12;i++){
+      const h = 10 + i;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="border px-3 py-2 text-sm">${h}h - ${h+1}h</td>
+                      <td class="border px-3 py-2"><input type="text" inputmode="decimal" data-index="${i}" class="bicicletaInput w-full border rounded px-3 py-2" value="${escapeHTML(bicicletaData.valores[i]||'')}"></td>`;
+      bicicletaTableEl.appendChild(tr);
+    }
+    anotacoesEl.value = bicicletaData.anotacoes || '';
+    conectarEventosBicicleta();
+    calcularMedia();
+  }
 
-        <button onclick="salvarBike()" class="px-4 py-2 bg-blue-600 text-white rounded">Registrar</button>
-    </div>
-</div>
+  function conectarEventosBicicleta(){
+    document.querySelectorAll('.bicicletaInput').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const idx = Number(inp.dataset.index);
+        bicicletaData.valores[idx] = inp.value;
+        salvarLocal(keyFor('bicicleta'), bicicletaData);
+        calcularMedia();
+      });
+      inp.addEventListener('blur', ()=>{
+        const idx = Number(inp.dataset.index);
+        bicicletaData.valores[idx] = inp.value;
+        salvarLocal(keyFor('bicicleta'), bicicletaData);
+        calcularMedia();
+      });
+    });
+    anotacoesEl.addEventListener('input', ()=>{
+      bicicletaData.anotacoes = anotacoesEl.value;
+      salvarLocal(keyFor('bicicleta'), bicicletaData);
+      showTemp('msgBic');
+    });
+  }
 
-<!-- P4 -->
-<div id="p4" class="tab-content hidden">
-    <div class="bg-white p-4 rounded shadow">
-        <h2 class="font-semibold mb-3">Fechamento P4</h2>
+  function parseNumero(v){ if((v === '' || v === null || v===undefined) && v!==0) return 0; const s=String(v).trim().replace(',','.'); const n=parseFloat(s); return isNaN(n)?0:n; }
+  function calcularMedia(){ const soma = bicicletaData.valores.reduce((acc,cur)=>acc+parseNumero(cur),0); const media = soma/12; mediaEl.textContent = media.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
-        <label>Alterações:</label>
-        <textarea id="p4Alteracoes" class="border rounded w-full px-3 py-2 mb-2"></textarea>
+  document.getElementById('btnCompartilhar').addEventListener('click', async ()=>{
+    try{
+      const el=document.getElementById('bicicletaCard');
+      await Promise.all(Array.from(el.querySelectorAll('img')).map(img=> img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r})));
+      const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
+      const blob = await new Promise(r=>canvas.toBlob(r,'image/png'));
+      const fileName = `bicicleta_${selectedDate}_${new Date().toISOString().slice(11,19).replace(/:/g,'-')}.png`;
+      if(navigator.canShare && navigator.canShare({files:[new File([blob],fileName,{type:'image/png'})]})){
+        try{ await navigator.share({files:[new File([blob],fileName,{type:'image/png'})], title:'Controle de Bicicleta', text:`Registro ${selectedDate}`}); return; }catch(err){}
+      }
+      const url=URL.createObjectURL(blob); window.open(url,'_blank');
+    }catch(err){ alert('Erro ao gerar compartilhamento.'); console.error(err); }
+  });
 
-        <div class="mb-2">
-            <input type="checkbox" id="p4Credencial"> Credencial
-        </div>
+  document.getElementById('btnSalvarBicicleta').addEventListener('click', async ()=>{
+    const payload = { acao:'salvar_bicicleta', data:selectedDate, registro: bicicletaData };
+    const resp = await enviarAoWebApp(payload);
+    if(resp && resp.ok) showTemp('msgSalvarBic');
+  });
 
-        <div class="mb-2">
-            <input type="checkbox" id="p4Chave"> Chave
-        </div>
+  /* ---------- FECHAMENTO ---------- */
+  const formFechamento = document.getElementById('formFechamento');
+  const listaFechamentos = document.getElementById('listaFechamentos');
+  let fechamentos = [];
 
-        <label>Hora entrada:</label>
-        <input type="time" id="p4Entrada" class="border rounded w-full mb-2">
+  function renderFechamentos(){
+    listaFechamentos.innerHTML='';
+    if(!fechamentos.length){ listaFechamentos.innerHTML='<p class="text-sm text-gray-600">Nenhum fechamento salvo para a data selecionada.</p>'; return; }
+    fechamentos.forEach(r=>{
+      const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
+      div.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="text-sm font-semibold">Alterações</div>
+            <div class="text-sm preserve mt-1">${escapeHTML(r.alteracoes||'')}</div>
+            <div class="text-sm mt-2">Credencial: ${(r.credencial? 'Sim':'Não')} • Chave: ${(r.chave? 'Sim':'Não')}</div>
+            <div class="text-sm mt-1">Horas: ${r.horaEntrada||''} / ${r.horaSaida||''} / ${r.horaPedestre||''}</div>
+          </div>
+          <div class="relative inline-block">
+            <button class="dots-fechamento text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" type="button">⋮</button>
+            <div id="menu-fech-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
+              <button class="block w-full text-left px-3 py-2 edit-fech" data-id="${r.id}" type="button">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-fech" data-id="${r.id}" type="button">Excluir</button>
+            </div>
+          </div>
+        </div>`;
+      listaFechamentos.appendChild(div);
+    });
+  }
 
-        <label>Hora saída:</label>
-        <input type="time" id="p4Saida" class="border rounded w-full mb-2">
+  // handlers menu fechamento
+  listaFechamentos.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.dots-fechamento');
+    if(btn){
+      const id = btn.dataset.id;
+      document.querySelectorAll('[id^="menu-fech-"]').forEach(m=>m.classList.add('hidden'));
+      const menu = document.getElementById(`menu-fech-${id}`);
+      if(menu) menu.classList.toggle('hidden');
+      return;
+    }
+    const edit = e.target.closest('.edit-fech');
+    if(edit){ editarFechamento(edit.dataset.id); return; }
+    const del = e.target.closest('.del-fech');
+    if(del){ excluirFechamento(del.dataset.id); return; }
+  });
 
-        <label>Hora pedestre:</label>
-        <input type="time" id="p4Pedestre" class="border rounded w-full mb-3">
+  formFechamento.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const raw = document.getElementById('alteracoesTerminais').value || '';
+    const credencial = document.getElementById('credencialGuarita').checked;
+    const chave = document.getElementById('chaveGuarita').checked;
+    const horaEntrada = document.getElementById('horaFechEntrada').value;
+    const horaSaida = document.getElementById('horaFechSaida').value;
+    const horaPedestre = document.getElementById('horaFechPedestre').value;
+    const rec = { id: genId(), alteracoes: raw, credencial, chave, horaEntrada, horaSaida, horaPedestre, timestamp: new Date().toISOString() };
+    fechamentos.push(rec);
+    salvarLocal(keyFor('fechamento'), fechamentos);
+    renderFechamentos();
+    formFechamento.reset();
 
-        <button onclick="salvarFechamento()" class="px-4 py-2 bg-blue-600 text-white rounded">Registrar</button>
-    </div>
-</div>
+    const resp = await enviarAoWebApp({ acao:'salvar_fechamento', data:selectedDate, registro: rec });
+    if(resp && resp.ok) showTemp('msgFech');
+  });
 
-<!-- RELATÓRIO OPERADOR -->
-<div id="relatorio" class="tab-content hidden">
-    <div class="bg-white p-4 rounded shadow">
-        <h2 class="font-semibold mb-3">Relatório do operador</h2>
+  function editarFechamento(id){
+    const rec = fechamentos.find(x=>x.id===id);
+    if(!rec) return;
+    document.getElementById('alteracoesTerminais').value = rec.alteracoes || '';
+    document.getElementById('credencialGuarita').checked = !!rec.credencial;
+    document.getElementById('chaveGuarita').checked = !!rec.chave;
+    document.getElementById('horaFechEntrada').value = rec.horaEntrada || '';
+    document.getElementById('horaFechSaida').value = rec.horaSaida || '';
+    document.getElementById('horaFechPedestre').value = rec.horaPedestre || '';
+    fechamentos = fechamentos.filter(x=>x.id!==id);
+    salvarLocal(keyFor('fechamento'), fechamentos);
+    renderFechamentos();
+  }
 
-        <label>Nome:</label>
-        <input id="relNome" class="border rounded px-3 py-2 w-full mb-2">
+  function excluirFechamento(id){
+    if(!confirm('Excluir este fechamento?')) return;
+    fechamentos = fechamentos.filter(x=>x.id!==id);
+    salvarLocal(keyFor('fechamento'), fechamentos);
+    renderFechamentos();
+    enviarAoWebApp({ acao:'excluir_fechamento', data:selectedDate, id });
+  }
 
-        <label>Turno:</label>
-        <input id="relTurno" class="border rounded px-3 py-2 w-full mb-2">
+  /* ---------- RELATÓRIO ---------- */
+  const formRelatorio = document.getElementById('formRelatorio');
+  const listaRelatorios = document.getElementById('listaRelatorios');
+  let relatorios = [];
 
-        <label>Informações:</label>
-        <textarea id="relInfo" class="border rounded w-full px-3 py-2 mb-3"></textarea>
+  function renderRelatorios(){
+    listaRelatorios.innerHTML='';
+    if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600">Nenhum relatório para a data selecionada.</p>'; return; }
+    relatorios.forEach(r=>{
+      const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
+      div.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="text-sm font-semibold">Nome: ${escapeHTML(r.nome||'')}</div>
+            <div class="text-sm">Data: ${escapeHTML(r.data||'')}</div>
+            <div class="text-sm preserve mt-1">${escapeHTML(r.info||'')}</div>
+          </div>
+          <div class="relative inline-block">
+            <button class="dots-rel text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" type="button">⋮</button>
+            <div id="menu-rel-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
+              <button class="block w-full text-left px-3 py-2 edit-rel" data-id="${r.id}" type="button">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-rel" data-id="${r.id}" type="button">Excluir</button>
+            </div>
+          </div>
+        </div>`;
+      listaRelatorios.appendChild(div);
+    });
+  }
 
-        <button onclick="salvarRelatorio()" class="px-4 py-2 bg-blue-600 text-white rounded">Registrar</button>
-    </div>
-</div>
+  listaRelatorios.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.dots-rel');
+    if(btn){
+      const id = btn.dataset.id;
+      document.querySelectorAll('[id^="menu-rel-"]').forEach(m=>m.classList.add('hidden'));
+      const menu = document.getElementById(`menu-rel-${id}`);
+      if(menu) menu.classList.toggle('hidden');
+      return;
+    }
+    const edit = e.target.closest('.edit-rel');
+    if(edit){ editarRelatorio(edit.dataset.id); return; }
+    const del = e.target.closest('.del-rel');
+    if(del){ excluirRelatorio(del.dataset.id); return; }
+  });
 
-<!-- INFORMAÇÕES -->
-<div id="informacoes" class="tab-content hidden">
-    <div class="bg-white p-4 rounded shadow">
-        <h2 class="font-semibold mb-3">Informações</h2>
+  formRelatorio.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const nome = document.getElementById('relNome').value.trim();
+    if(!nome){ alert('Informe o nome.'); return; }
+    const data = document.getElementById('relData').value || selectedDate;
+    const turno = document.getElementById('relTurno').value;
+    const info = document.getElementById('relInfo').value || '';
+    const rec = { id: genId(), nome, data, turno, info, timestamp: new Date().toISOString() };
+    relatorios.push(rec);
+    salvarLocal(keyFor('relatorio'), relatorios);
+    renderRelatorios();
+    formRelatorio.reset();
+    document.getElementById('relData').value = selectedDate;
 
-        <textarea id="infoDescricao" class="border rounded w-full px-3 py-2 mb-3"></textarea>
+    const resp = await enviarAoWebApp({ acao:'salvar_relatorio', data:selectedDate, registro: rec });
+    if(resp && resp.ok) showTemp('msgRel');
+  });
 
-        <button onclick="salvarInformacoes()" class="px-4 py-2 bg-blue-600 text-white rounded">Registrar</button>
-    </div>
-</div>
+  function editarRelatorio(id){
+    const r = relatorios.find(x=>x.id===id);
+    if(!r) return;
+    document.getElementById('relNome').value = r.nome || '';
+    document.getElementById('relData').value = r.data || selectedDate;
+    document.getElementById('relTurno').value = r.turno || '08-20';
+    document.getElementById('relInfo').value = r.info || '';
+    relatorios = relatorios.filter(x=>x.id!==id);
+    salvarLocal(keyFor('relatorio'), relatorios);
+    renderRelatorios();
+  }
 
-<!-- REGISTROS DO DIA -->
-<div class="bg-white p-4 mt-6 rounded shadow">
-    <h2 class="font-semibold mb-3">Registros do dia</h2>
+  function excluirRelatorio(id){
+    if(!confirm('Excluir este relatório?')) return;
+    relatorios = relatorios.filter(x=>x.id!==id);
+    salvarLocal(keyFor('relatorio'), relatorios);
+    renderRelatorios();
+    enviarAoWebApp({ acao:'excluir_relatorio', data:selectedDate, id });
+  }
 
-    <table class="w-full border">
-        <thead>
-            <tr class="bg-gray-200">
-                <th class="border px-2 py-1">Tipo</th>
-                <th class="border px-2 py-1">Data</th>
-                <th class="border px-2 py-1">Seção</th>
-                <th class="border px-2 py-1">Arquivo</th>
-            </tr>
-        </thead>
-        <tbody id="tabelaRegistros"></tbody>
-    </table>
-</div>
+  /* ---------- INFORMAÇÕES supervisor ---------- */
+  const btnSalvarInfo = document.getElementById('btnSalvarInfo');
+  const listaInfo = document.getElementById('listaInfo');
+  let infos = [];
 
-</div>
+  function renderInfos(){
+    listaInfo.innerHTML='';
+    if(!infos.length){ listaInfo.innerHTML='<p class="text-sm text-gray-600">Nenhuma informação salva.</p>'; return; }
+    infos.forEach(r=>{
+      const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
+      div.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div><div class="text-sm preserve">${escapeHTML(r.descricao||'')}</div><div class="text-xs text-gray-500 mt-1">${r.timestamp||''}</div></div>
+          <div class="relative inline-block">
+            <button class="dots-info text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" type="button">⋮</button>
+            <div id="menu-info-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
+              <button class="block w-full text-left px-3 py-2 edit-info" data-id="${r.id}" type="button">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-info" data-id="${r.id}" type="button">Excluir</button>
+            </div>
+          </div>
+        </div>`;
+      listaInfo.appendChild(div);
+    });
+  }
 
-<script>
-// Inicializar data de hoje
-document.getElementById("dataDia").value = new Date().toISOString().slice(0,10);
-carregarRegistros();
+  listaInfo.addEventListener('click',(e)=>{
+    const btn = e.target.closest('.dots-info');
+    if(btn){
+      const id = btn.dataset.id;
+      document.querySelectorAll('[id^="menu-info-"]').forEach(m=>m.classList.add('hidden'));
+      const menu = document.getElementById(`menu-info-${id}`);
+      if(menu) menu.classList.toggle('hidden');
+      return;
+    }
+    const edit = e.target.closest('.edit-info');
+    if(edit){ editarInfo(edit.dataset.id); return; }
+    const del = e.target.closest('.del-info');
+    if(del){ excluirInfo(del.dataset.id); return; }
+  });
+
+  btnSalvarInfo.addEventListener('click', async ()=>{
+    const descricao = document.getElementById('infoDescricao').value.trim();
+    if(!descricao){ alert('Escreva algo antes de salvar.'); return; }
+    const rec = { id: genId(), descricao, timestamp: new Date().toISOString() };
+    infos.push(rec);
+    salvarLocal(keyFor('info'), infos);
+    renderInfos();
+    document.getElementById('infoDescricao').value = '';
+
+    const resp = await enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' });
+    if(resp && resp.ok) showTemp('msgInfo');
+  });
+
+  function editarInfo(id){
+    const r = infos.find(x=>x.id===id);
+    if(!r) return;
+    document.getElementById('infoDescricao').value = r.descricao || '';
+    infos = infos.filter(x=>x.id!==id);
+    salvarLocal(keyFor('info'), infos);
+    renderInfos();
+  }
+
+  function excluirInfo(id){
+    if(!confirm('Excluir esta informação?')) return;
+    infos = infos.filter(x=>x.id!==id);
+    salvarLocal(keyFor('info'), infos);
+    renderInfos();
+    enviarAoWebApp({ acao:'excluir_informacoes', data:selectedDate, id });
+  }
+
+  /* ---------- Upload de fotos: preview + envio ao Apps Script (text/plain) ---------- */
+  function setupPhotoUpload(inputId, previewContainerId, sectionLabel, extraDataFn){
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewContainerId);
+    if(!input || !preview) return;
+    input.addEventListener('change', async ()=>{
+      const file = input.files && input.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e)=>{
+        const dataUrl = e.target.result;
+        const img = document.createElement('img');
+        img.className = 'preview-img';
+        img.src = dataUrl;
+        preview.prepend(img);
+        const payload = {
+          imagem: dataUrl,
+          nomeArquivo: file.name || `${sectionLabel}_${selectedDate}.png`,
+          data: selectedDate,
+          secao: sectionLabel,
+          meta: extraDataFn ? extraDataFn() : {}
+        };
+        const resp = await enviarAoWebApp({ acao:'salvar_imagem', payload });
+        if(resp && resp.ok){
+          alert('Foto salva no Google Drive: ' + (resp.url || resp.text));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  setupPhotoUpload("fotoBicicleta","previewBicicleta","bicicleta", ()=>({ anotacoes: document.getElementById('anotacoesBicicleta')?.value || '' }));
+  setupPhotoUpload("fotoFechamento","previewFechamento","fechamento", ()=>({
+    alteracoes: document.getElementById('alteracoesTerminais')?.value || '',
+    credencial: document.getElementById('credencialGuarita')?.checked || false,
+    chave: document.getElementById('chaveGuarita')?.checked || false,
+    horaEntrada: document.getElementById('horaFechEntrada')?.value || '',
+    horaSaida: document.getElementById('horaFechSaida')?.value || '',
+    horaPedestre: document.getElementById('horaFechPedestre')?.value || ''
+  }));
+  setupPhotoUpload("fotoRelatorio","previewRelatorio","relatorio", ()=>({
+    nome: document.getElementById('relNome')?.value || '',
+    turno: document.getElementById('relTurno')?.value || '',
+    info: document.getElementById('relInfo')?.value || ''
+  }));
+  setupPhotoUpload("fotoInfo","previewInfo","informacoes_supervisor", ()=>({
+    descricao: document.getElementById('infoDescricao')?.value || ''
+  }));
+
+  /* ---------- Auxiliares: load / showTemp / init ---------- */
+  function showTemp(id, ms=1400){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.remove('hidden');
+    setTimeout(()=>el.classList.add('hidden'), ms);
+  }
+
+  function loadAllData(){
+    registrosVeiculos = carregarLocal(keyFor('veiculos'), []);
+    renderVeiculos();
+    bicicletaData = carregarLocal(keyFor('bicicleta'), { valores: Array(12).fill(''), anotacoes: '' });
+    construirTabelaBicicleta();
+    fechamentos = carregarLocal(keyFor('fechamento'), []);
+    renderFechamentos();
+    relatorios = carregarLocal(keyFor('relatorio'), []);
+    renderRelatorios();
+    infos = carregarLocal(keyFor('info'), []);
+    renderInfos();
+    const infoLocal = carregarLocal(keyFor('info'), null);
+    if(infoLocal && infoLocal.descricao) document.getElementById('infoDescricao').value = infoLocal.descricao;
+    const relDataEl=document.getElementById('relData'); if(relDataEl) relDataEl.value = selectedDate;
+  }
+  loadAllData();
+
+  // fechar menus com Esc
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElementById('modalEdit').classList.add('hidden'); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); } });
+
+}); // end DOMContentLoaded
 </script>
 
 </body>
