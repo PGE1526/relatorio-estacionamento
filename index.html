@@ -1,69 +1,127 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Relatório de Estacionamento</title>
+  <meta charset="utf-8" />
+  <title>Relatório diário PGE</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f2f2f2;
-    }
-    h1 {
-      color: #333;
-    }
-    form {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      max-width: 400px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    input, button {
-      display: block;
-      margin-bottom: 15px;
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
+    .watermark { position: fixed; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:5; opacity:0.06; width:60vmin; max-width:900px; filter:grayscale(100%); }
+    .watermark img{width:100%;height:auto;display:block}
+    main{position:relative;z-index:10}
+    .preserve{white-space:pre-wrap; word-break:break-word}
+    .menu,#modalEdit{z-index:60}
+    textarea, input { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; font-size:14px; line-height:1.4; }
   </style>
 </head>
-<body>
-  <h1>Formulário de Relatório</h1>
-  <form id="formRelatorio">
-    <input id="placa" placeholder="Placa do veículo" required />
-    <input id="hora" placeholder="Hora" required />
-    <input id="motivo" placeholder="Motivo" required />
-    <input id="operador" placeholder="Operador" required />
-    <button type="submit">Enviar relatório</button>
-  </form>
+<body class="bg-gray-50 min-h-screen">
 
-  <script>
-    document.getElementById('formRelatorio').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const dados = {
-        placa: document.getElementById('placa').value,
-        hora: document.getElementById('hora').value,
-        motivo: document.getElementById('motivo').value,
-        operador: document.getElementById('operador').value
-      };
-      await fetch('https://script.google.com/macros/s/AKfycbyp2tp5u1u6nJ5AJdy7gWuzEK7inzvSTT3Tx1IPAVY4tMI9BJpneFHEiAt0I20_eiGV/exec', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dados)
-      });
-      alert('Relatório enviado com sucesso!');
-      e.target.reset();
-    });
-  </script>
+  <div class="watermark" aria-hidden="true"><img src="logo.png" alt="Marca d'água PGE"></div>
+
+  <header class="bg-white shadow-sm sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-lg font-bold">Relatório diário PGE</h1>
+        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">◀</button>
+        <input id="datePicker" type="date" class="border rounded px-3 py-2 bg-white" />
+        <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">▶</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+
+    <nav class="bg-white rounded shadow p-3 flex gap-2">
+      <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold">Veículos</button>
+      <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Bicicleta</button>
+      <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Fechamento da P4</button>
+      <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Relatório diário operador</button>
+      <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Informações</button>
+    </nav>
+
+    <!-- Seções já existentes (veículos, bicicleta, fechamento, relatório) -->
+    <!-- ... mantenha seu código atual aqui ... -->
+
+    <!-- Nova aba Informações -->
+    <section id="info" class="tabcontent hidden">
+      <div class="bg-white rounded shadow p-4 space-y-4">
+        <h2 class="font-semibold">Informações gerais</h2>
+        <p class="text-sm text-gray-600">Você pode adicionar uma foto diretamente da câmera ou galeria.</p>
+        
+        <!-- Botão de foto -->
+        <input type="file" id="fotoInput" accept="image/*" capture="environment" 
+               class="block w-full border rounded px-3 py-2" />
+
+        <!-- Pré-visualização -->
+        <div id="previewFoto" class="mt-4">
+          <p class="text-sm text-gray-500">Pré-visualização:</p>
+          <img id="fotoPreview" src="" alt="Foto selecionada" 
+               class="max-w-xs rounded shadow" />
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<script>
+/* ---------- controle de abas ---------- */
+const tabs = {
+  veiculosBtn: document.getElementById('tabVeiculosBtn'),
+  bicicletaBtn: document.getElementById('tabBicicletaBtn'),
+  fechamentoBtn: document.getElementById('tabFechamentoBtn'),
+  relatorioBtn: document.getElementById('tabRelatorioBtn'),
+  infoBtn: document.getElementById('tabInfoBtn')
+};
+
+const tabContents = {
+  veiculos: document.getElementById('veiculos'),
+  bicicleta: document.getElementById('bicicleta'),
+  fechamento: document.getElementById('fechamento'),
+  relatorio: document.getElementById('relatorio'),
+  info: document.getElementById('info')
+};
+
+function setActiveTabButton(btn){
+  Object.values(tabs).forEach(b=>{
+    b.classList.remove('bg-blue-600','text-white');
+    b.classList.add('bg-white','text-gray-700','border');
+  });
+  btn.classList.remove('bg-white','text-gray-700','border');
+  btn.classList.add('bg-blue-600','text-white');
+}
+
+function openTab(evt,name){
+  Object.values(tabContents).forEach(c=>c.classList.add('hidden'));
+  tabContents[name].classList.remove('hidden');
+  if(evt&&evt.currentTarget) setActiveTabButton(evt.currentTarget);
+}
+
+tabs.veiculosBtn.addEventListener('click', e=>openTab(e,'veiculos'));
+tabs.bicicletaBtn.addEventListener('click', e=>openTab(e,'bicicleta'));
+tabs.fechamentoBtn.addEventListener('click', e=>openTab(e,'fechamento'));
+tabs.relatorioBtn.addEventListener('click', e=>openTab(e,'relatorio'));
+tabs.infoBtn.addEventListener('click', e=>openTab(e,'info'));
+
+/* ---------- preview da foto ---------- */
+const fotoInput = document.getElementById('fotoInput');
+const fotoPreview = document.getElementById('fotoPreview');
+
+fotoInput.addEventListener('change', () => {
+  const file = fotoInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      fotoPreview.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+</script>
+
 </body>
 </html>
+
