@@ -2,487 +2,253 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Relatório diário PGE</title>
+  <title>Relatório diário PGE — Visualização pública</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
   <style>
-    main{position:relative;z-index:10}
-    .preview-img{max-width:160px;border-radius:6px;box-shadow:0 0 6px rgba(0,0,0,.1)}
-    .preview-grid{display:flex;flex-wrap:wrap;gap:10px}
-    textarea,input{font-family:ui-sans-serif,system-ui}
-    .tabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-    .tabs-row{display:flex;gap:8px;padding:6px}
-    .tabs-row button{flex:0 0 auto;white-space:nowrap}
+    body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;}
+    .preview-img{max-width:140px;border-radius:6px}
+    .preview-grid{display:flex;flex-wrap:wrap;gap:8px}
     .hidden{display:none}
+    .tab-btn-active{background:#1e40af;color:white}
   </style>
 </head>
-
 <body class="bg-gray-50 min-h-screen">
 
-<!-- HEADER -->
-<header class="bg-white shadow-sm sticky top-0 z-40">
+<header class="bg-white shadow sticky top-0 z-40">
   <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
     <div>
       <h1 class="text-lg font-bold">Relatório diário PGE</h1>
-      <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Supervisor</p>
+      <p class="text-sm text-gray-500">Todos os registros são públicos — visualização em tempo real</p>
     </div>
-
-    <div class="flex gap-2 items-center">
-      <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">◀</button>
-      <input id="datePicker" type="date" class="border rounded px-3 py-2 bg-white">
-      <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">▶</button>
+    <div class="flex items-center gap-2">
+      <button id="prevDay" class="px-3 py-2 rounded bg-gray-100">◀</button>
+      <input id="datePicker" type="date" class="border rounded px-3 py-2 bg-white" />
+      <button id="nextDay" class="px-3 py-2 rounded bg-gray-100">▶</button>
     </div>
   </div>
 </header>
 
-<!-- MAIN -->
 <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
-<!-- TABS -->
-<nav class="bg-white rounded shadow">
-  <div class="tabs-scroll">
-    <div class="tabs-row">
-      <button id="tabVeiculosBtn" class="tablink bg-blue-600 text-white px-4 py-2 rounded font-semibold">Veículos</button>
-      <button id="tabBicicletaBtn" class="tablink bg-white text-gray-700 px-4 py-2 rounded border">Bicicleta</button>
-      <button id="tabFechamentoBtn" class="tablink bg-white text-gray-700 px-4 py-2 rounded border">Fechamento P4</button>
-      <button id="tabRelatorioBtn" class="tablink bg-white text-gray-700 px-4 py-2 rounded border">Relatório do operador</button>
-      <button id="tabInfoBtn" class="tablink bg-white text-gray-700 px-4 py-2 rounded border">Informações do supervisor</button>
+  <nav class="bg-white rounded shadow p-3">
+    <div class="flex gap-2 overflow-x-auto">
+      <button id="tabAll" class="tabbtn px-3 py-2 rounded bg-blue-600 text-white">Tudo</button>
+      <button id="tabVeiculos" class="tabbtn px-3 py-2 rounded bg-white border">Veículos</button>
+      <button id="tabFechamento" class="tabbtn px-3 py-2 rounded bg-white border">Fechamento P4</button>
+      <button id="tabRelatorio" class="tabbtn px-3 py-2 rounded bg-white border">Relatórios</button>
+      <button id="tabBicicleta" class="tabbtn px-3 py-2 rounded bg-white border">Bicicleta</button>
+      <button id="tabInfo" class="tabbtn px-3 py-2 rounded bg-white border">Informações</button>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<!-- ====================== VEÍCULOS ====================== -->
-<section id="veiculos">
-  <div class="grid md:grid-cols-2 gap-6">
+  <section class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-3">Registros</h2>
 
-    <!-- form -->
-    <div class="bg-white rounded shadow p-4">
-      <h2 class="font-semibold mb-3">Registrar saída de veículo</h2>
+    <div id="loading" class="text-sm text-gray-500 mb-3">Carregando registros...</div>
 
-      <form id="formVeiculos" class="space-y-3">
-        <div>
-          <label class="text-sm font-medium">Placa</label>
-          <input list="placasList" type="text" id="placaInput" maxlength="8" placeholder="ABC-1234"
-            class="border rounded px-3 py-2 w-full">
-          <datalist id="placasList">
-            <option value="ABC-1234"></option>
-            <option value="DEF-5678"></option>
-            <option value="GHI-9012"></option>
-          </datalist>
-
-          <p id="placaErro" class="hidden text-red-600 text-sm">Placa inválida.</p>
-        </div>
-
-        <div>
-          <label class="text-sm font-medium">Hora</label>
-          <input type="time" id="horaInput" class="border rounded px-3 py-2 w-full">
-        </div>
-
-        <div>
-          <label class="text-sm font-medium">Motivo</label>
-          <input type="text" id="motivoInput" class="border rounded px-3 py-2 w-full">
-        </div>
-
-        <div>
-          <label class="text-sm font-medium">Operador</label>
-          <input type="text" id="operadorInput" class="border rounded px-3 py-2 w-full">
-        </div>
-
-        <button class="bg-blue-600 text-white px-4 py-2 rounded">Registrar</button>
-        <span id="msgVeiculo" class="hidden text-green-700 text-sm">Registro salvo.</span>
-      </form>
+    <div id="recordsContainer" class="space-y-4">
+      <!-- aqui aparecerão os cartões de registros -->
     </div>
 
-    <!-- tabela -->
-    <div class="bg-white rounded shadow p-4">
-      <h2 class="font-semibold mb-3">Registros do dia</h2>
-
-      <div class="overflow-x-auto">
-        <table class="table-auto w-full text-sm">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="px-3 py-2">Placa</th>
-              <th class="px-3 py-2">Hora</th>
-              <th class="px-3 py-2">Motivo</th>
-              <th class="px-3 py-2">Operador</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="registrosVeiculosBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ====================== BICICLETA ====================== -->
-<section id="bicicleta" class="hidden">
-  <div class="bg-white rounded shadow p-4 space-y-4">
-    <h2 class="font-semibold">Controle de Bicicleta</h2>
-
-    <label class="block text-sm font-medium">Anotações</label>
-    <textarea id="anotacoesBicicleta" rows="4" class="border rounded w-full px-3 py-2"></textarea>
-
-    <label class="block text-sm font-medium">Foto</label>
-    <input type="file" id="fotoBicicleta" accept="image/*" class="border px-3 py-2 w-full">
-    <div id="previewBicicleta" class="preview-grid"></div>
-
-    <button id="btnSalvarBicicleta" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar Bicicleta</button>
-    <span id="msgSalvarBic" class="hidden text-green-700">Enviado ao Drive.</span>
-  </div>
-</section>
-
-<!-- ====================== FECHAMENTO ====================== -->
-<section id="fechamento" class="hidden">
-  <div class="bg-white rounded shadow p-4 space-y-4">
-    <h2 class="font-semibold">Fechamento P4</h2>
-
-    <form id="formFechamento" class="space-y-3">
-
-      <label>Alterações</label>
-      <textarea id="alteracoesTerminais" class="border rounded w-full px-3 py-2" rows="4"></textarea>
-
-      <div class="flex gap-4">
-        <label><input type="checkbox" id="credencialGuarita"> Credencial na guarita</label>
-        <label><input type="checkbox" id="chaveGuarita"> Chave na guarita</label>
-      </div>
-
-      <div class="grid md:grid-cols-3 gap-3">
-        <div><label>Entrada</label><input id="horaFechEntrada" type="time" class="border rounded px-3 py-2 w-full"></div>
-        <div><label>Saída</label><input id="horaFechSaida" type="time" class="border rounded px-3 py-2 w-full"></div>
-        <div><label>Pedestre</label><input id="horaFechPedestre" type="time" class="border rounded px-3 py-2 w-full"></div>
-      </div>
-
-      <button class="bg-indigo-600 text-white px-4 py-2 rounded">Salvar Fechamento</button>
-      <span id="msgFech" class="hidden text-green-700">Salvo.</span>
-    </form>
-
-    <label>Foto</label>
-    <input type="file" id="fotoFechamento" class="border rounded px-3 py-2 w-full">
-    <div id="previewFechamento" class="preview-grid"></div>
-  </div>
-</section>
-
-<!-- ====================== RELATÓRIO ====================== -->
-<section id="relatorio" class="hidden">
-  <div class="bg-white rounded shadow p-4 space-y-4">
-    <h2 class="font-semibold">Relatório do Operador</h2>
-
-    <form id="formRelatorio" class="space-y-3">
-      <input id="relNome" type="text" placeholder="Nome" class="border rounded px-3 py-2 w-full">
-      <input id="relData" type="date" class="border rounded px-3 py-2 w-full">
-
-      <select id="relTurno" class="border rounded px-3 py-2 w-full">
-        <option value="08-20">08:00 - 20:00</option>
-        <option value="11-23">11:00 - 23:00</option>
-        <option value="13-01">13:00 - 01:00</option>
-      </select>
-
-      <textarea id="relInfo" rows="4" placeholder="Informações" class="border rounded px-3 py-2 w-full"></textarea>
-
-      <button class="bg-green-600 text-white px-4 py-2 rounded">Salvar Relatório</button>
-      <span id="msgRel" class="hidden text-green-700">Salvo.</span>
-    </form>
-
-    <label>Foto</label>
-    <input type="file" id="fotoRelatorio" class="border rounded px-3 py-2 w-full">
-    <div id="previewRelatorio" class="preview-grid"></div>
-  </div>
-</section>
-
-<!-- ====================== SUPERVISOR ====================== -->
-<section id="info" class="hidden">
-  <div class="bg-white rounded shadow p-4 space-y-4">
-    <h2 class="font-semibold">Informações do Supervisor</h2>
-
-    <textarea id="infoDescricao" rows="4" class="border rounded px-3 py-2 w-full"></textarea>
-
-    <button id="btnSalvarInfo" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar Informações</button>
-    <span id="msgInfo" class="hidden text-green-700">Informações salvas.</span>
-
-    <label>Foto</label>
-    <input type="file" id="fotoInfo" class="border rounded px-3 py-2 w-full">
-    <div id="previewInfo" class="preview-grid"></div>
-  </div>
-</section>
+    <div id="noRecords" class="text-sm text-gray-500 hidden">Nenhum registro encontrado para a data selecionada.</div>
+  </section>
 
 </main>
 
-<!-- ====================== SCRIPT COMPLETO ====================== -->
 <script>
-/* URL CORRIGIDA */
+/* ------------- CONFIG ------------- */
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycby2Ftp5u1u6nJ5AJdy7gWuzEK7inZvSTT3Tx1IPAVY4tMI9BJpneFHEiAt0l20_eiGv/exec";
 
-/* UTILITÁRIOS */
-function keyFor(type, date) { return type + "_" + date; }
-function genId() { return Date.now().toString(36) + Math.random().toString(36).substring(2); }
-function salvarLocal(k, data) { localStorage.setItem(k, JSON.stringify(data)); }
-function carregarLocal(k, def) { return JSON.parse(localStorage.getItem(k) || "null") || def; }
+/* ------------- DOM ------------- */
+const datePicker = document.getElementById('datePicker');
+const prevDay = document.getElementById('prevDay');
+const nextDay = document.getElementById('nextDay');
+const recordsContainer = document.getElementById('recordsContainer');
+const loadingEl = document.getElementById('loading');
+const noRecords = document.getElementById('noRecords');
 
-function escapeHTML(txt) {
-  return txt.replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m]));
+const tabAll = document.getElementById('tabAll');
+const tabVeiculos = document.getElementById('tabVeiculos');
+const tabFechamento = document.getElementById('tabFechamento');
+const tabRelatorio = document.getElementById('tabRelatorio');
+const tabBicicleta = document.getElementById('tabBicicleta');
+const tabInfo = document.getElementById('tabInfo');
+
+let activeFilter = 'all'; // all, veiculo, fechamento, relatorio, bicicleta, informacoes
+
+/* ------------- inicialização ------------- */
+function isoDate(d){ return d.toISOString().slice(0,10); }
+datePicker.value = isoDate(new Date());
+loadAndRender();
+
+prevDay.addEventListener('click', ()=>{ const d=new Date(datePicker.value); d.setDate(d.getDate()-1); datePicker.value = isoDate(d); loadAndRender(); });
+nextDay.addEventListener('click', ()=>{ const d=new Date(datePicker.value); d.setDate(d.getDate()+1); datePicker.value = isoDate(d); loadAndRender(); });
+datePicker.addEventListener('change', loadAndRender);
+
+tabAll.addEventListener('click', ()=>{ setActive('all'); renderCached(); });
+tabVeiculos.addEventListener('click', ()=>{ setActive('veiculo'); renderCached(); });
+tabFechamento.addEventListener('click', ()=>{ setActive('fechamento'); renderCached(); });
+tabRelatorio.addEventListener('click', ()=>{ setActive('relatorio'); renderCached(); });
+tabBicicleta.addEventListener('click', ()=>{ setActive('bicicleta'); renderCached(); });
+tabInfo.addEventListener('click', ()=>{ setActive('informacoes'); renderCached(); });
+
+function setActive(filter){
+  activeFilter = filter;
+  document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('bg-blue-600','text-white'));
+  if(filter==='all') tabAll.classList.add('bg-blue-600','text-white');
+  if(filter==='veiculo') tabVeiculos.classList.add('bg-blue-600','text-white');
+  if(filter==='fechamento') tabFechamento.classList.add('bg-blue-600','text-white');
+  if(filter==='relatorio') tabRelatorio.classList.add('bg-blue-600','text-white');
+  if(filter==='bicicleta') tabBicicleta.classList.add('bg-blue-600','text-white');
+  if(filter==='informacoes') tabInfo.classList.add('bg-blue-600','text-white');
 }
 
-/* API */
-async function enviarAoWebApp(payload) {
+/* cache dos registros do último carregamento */
+let cachedRecords = [];
+
+/* ------------- buscar registros do WebApp ------------- */
+async function fetchRecords(date){
   try {
-    const r = await fetch(WEBAPP_URL, {
-      method: "POST",
-      headers: {"Content-Type": "text/plain;charset=UTF-8"},
-      body: JSON.stringify(payload)
-    });
-    return await r.json();
-  } catch(e) {
-    alert("Erro ao enviar ao WebApp");
-    console.error(e);
+    loadingEl.style.display = 'block';
+    recordsContainer.innerHTML = '';
+    noRecords.classList.add('hidden');
+
+    const qs = new URLSearchParams({ action:'list', date: date });
+    const res = await fetch(WEBAPP_URL + '?' + qs.toString());
+    const json = await res.json();
+    if(!json || !json.ok) {
+      loadingEl.textContent = 'Erro ao carregar registros.';
+      console.error('Erro fetchRecords', json);
+      return [];
+    }
+    loadingEl.style.display = 'none';
+    return json.records || [];
+  } catch(err) {
+    loadingEl.textContent = 'Erro de rede ao carregar registros.';
+    console.error('fetchRecords error', err);
+    return [];
   }
 }
 
-/* ============== TABS ============== */
-function openTab(evt, name) {
-  document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
-  document.getElementById(name).classList.remove("hidden");
+/* ------------- render ------------- */
+function makeCard(rec) {
+  // rec: { filename, url, date, section, tipo, contentRaw, content }
+  const div = document.createElement('div');
+  div.className = 'border rounded p-3 bg-gray-50';
 
-  document.querySelectorAll(".tablink").forEach(btn => {
-    btn.className = "tablink bg-white text-gray-700 px-4 py-2 rounded border";
+  const header = document.createElement('div');
+  header.className = 'flex justify-between items-start gap-4';
+
+  const left = document.createElement('div');
+  left.innerHTML = `<div class="text-sm font-semibold">${escapeHtml(rec.tipo || rec.section || 'registro')}</div>
+                    <div class="text-xs text-gray-600">Data: ${escapeHtml(rec.date || '')} • Pasta: ${escapeHtml(rec.section || '')}</div>
+                    <div class="text-xs mt-1"><a target="_blank" href="${rec.url}" class="text-blue-600 underline">Abrir arquivo</a></div>`;
+
+  header.appendChild(left);
+
+  div.appendChild(header);
+
+  // conteúdo principal: se rec.content é objeto JSON com payload, mostramos campos relevantes
+  const body = document.createElement('div');
+  body.className = 'mt-3 text-sm';
+
+  let content = rec.content;
+  if(!content && rec.contentRaw) {
+    // tenta extrair payload manualmente se o JSON tiver chave payload
+    try {
+      const parsed = JSON.parse(rec.contentRaw);
+      content = parsed.payload || parsed;
+    } catch(e){}
+  }
+
+  if (content && typeof content === 'object') {
+    // formatamos alguns tipos comuns
+    if (content._tipo === 'veiculo' || rec.tipo==='veiculo' || rec.section.toLowerCase().indexOf('veiculo')!==-1) {
+      const p = content.payload || content;
+      body.innerHTML = `<div><strong>Placa:</strong> ${escapeHtml((p.placa||p.placa||''))}</div>
+                        <div><strong>Hora:</strong> ${escapeHtml(p.hora||'')}</div>
+                        <div><strong>Motivo:</strong> ${escapeHtml(p.motivo||'')}</div>
+                        <div><strong>Operador:</strong> ${escapeHtml(p.operador||'')}</div>`;
+    } else if (rec.tipo==='fechamento' || rec.section.toLowerCase().indexOf('fechamento')!==-1 || content._tipo==='fechamento') {
+      const p = content.payload || content;
+      body.innerHTML = `<div><strong>Alterações:</strong><div class="mt-1 preserve">${escapeHtml(p.alteracoes||'')}</div></div>
+                        <div class="mt-2"><strong>Credencial:</strong> ${p.credencial? 'Sim':'Não'} • <strong>Chave:</strong> ${p.chave? 'Sim':'Não'}</div>
+                        <div class="mt-1"><strong>Horas:</strong> ${escapeHtml((p.horaEntrada||'') + ' / ' + (p.horaSaida||'') + ' / ' + (p.horaPedestre||''))}</div>`;
+    } else if (rec.tipo==='relatorio' || rec.section.toLowerCase().indexOf('relatorio')!==-1 || content._tipo==='relatorio') {
+      const p = content.payload || content;
+      body.innerHTML = `<div><strong>Nome:</strong> ${escapeHtml(p.nome||'')}</div>
+                        <div><strong>Turno:</strong> ${escapeHtml(p.turno||'')}</div>
+                        <div class="mt-1 preserve">${escapeHtml(p.info||'')}</div>`;
+    } else if (rec.tipo==='bicicleta' || rec.section.toLowerCase().indexOf('bicicleta')!==-1 || content._tipo==='bicicleta') {
+      const p = content.payload || content;
+      let vals = (p.valores && Array.isArray(p.valores)) ? p.valores.join(', ') : (p.valores ? JSON.stringify(p.valores) : '');
+      body.innerHTML = `<div><strong>Anotações:</strong><div class="mt-1 preserve">${escapeHtml(p.anotacoes||'')}</div></div>
+                        <div class="mt-2"><strong>Valores:</strong> ${escapeHtml(vals)}</div>`;
+    } else if (rec.tipo==='informacoes' || rec.section.toLowerCase().indexOf('informacoes')!==-1 || content._tipo==='informacoes') {
+      const p = content.payload || content;
+      body.innerHTML = `<div class="preserve">${escapeHtml(p.descricao||'')}</div>`;
+    } else {
+      // generic: pretty print payload
+      const p = content.payload || content;
+      body.innerHTML = `<pre style="white-space:pre-wrap;font-size:12px">${escapeHtml(JSON.stringify(p, null, 2))}</pre>`;
+    }
+  } else {
+    // não é JSON parseável — mostra raw
+    body.innerHTML = `<pre style="white-space:pre-wrap;font-size:12px">${escapeHtml(rec.contentRaw || '')}</pre>`;
+  }
+
+  div.appendChild(body);
+
+  // se houver imagens no JSON (ex: fotos em Base64) não tentamos renderizar aqui — apenas links
+  return div;
+}
+
+function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ------------- carregar e renderizar ------------- */
+async function loadAndRender() {
+  const date = datePicker.value;
+  loadingEl.style.display = 'block';
+  recordsContainer.innerHTML = '';
+  noRecords.classList.add('hidden');
+
+  const records = await fetchRecords(date);
+  cachedRecords = records || [];
+  loadingEl.style.display = 'none';
+  renderCached();
+}
+
+function renderCached() {
+  recordsContainer.innerHTML = '';
+  const records = cachedRecords || [];
+  const filtered = records.filter(r => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'informacoes') return (r.tipo==='informacoes' || r.section.toLowerCase().indexOf('informacoes')!==-1);
+    return ( (r.tipo && r.tipo.toLowerCase() === activeFilter) || (r.section && r.section.toLowerCase() === activeFilter) );
   });
 
-  evt.currentTarget.className = "tablink bg-blue-600 text-white px-4 py-2 rounded";
-}
-
-tabVeiculosBtn.onclick = e => openTab(e,"veiculos");
-tabBicicletaBtn.onclick = e => openTab(e,"bicicleta");
-tabFechamentoBtn.onclick = e => openTab(e,"fechamento");
-tabRelatorioBtn.onclick = e => openTab(e,"relatorio");
-tabInfoBtn.onclick = e => openTab(e,"info");
-
-/* ============== DATA ============== */
-datePicker.valueAsDate = new Date();
-
-prevDay.onclick = () => {
-  const d = new Date(datePicker.value);
-  d.setDate(d.getDate() - 1);
-  datePicker.valueAsDate = d;
-  carregarDia();
-};
-
-nextDay.onclick = () => {
-  const d = new Date(datePicker.value);
-  d.setDate(d.getDate() + 1);
-  datePicker.valueAsDate = d;
-  carregarDia();
-};
-
-/* ============== VEÍCULOS ============== */
-function validarPlaca(p) {
-  return /^[A-Z]{3}-?\d{4}$/.test(p);
-}
-
-formVeiculos.onsubmit = async e => {
-  e.preventDefault();
-
-  const data = datePicker.value;
-  const placa = placaInput.value.toUpperCase();
-  const hora = horaInput.value;
-  const motivo = motivoInput.value;
-  const operador = operadorInput.value;
-
-  if (!validarPlaca(placa)) {
-    placaErro.classList.remove("hidden");
+  if (filtered.length === 0) {
+    noRecords.classList.remove('hidden');
     return;
+  } else {
+    noRecords.classList.add('hidden');
   }
-  placaErro.classList.add("hidden");
 
-  const reg = { id: genId(), placa, hora, motivo, operador };
-
-  const key = keyFor("veiculos", data);
-  const lista = carregarLocal(key, []);
-  lista.push(reg);
-  salvarLocal(key, lista);
-  renderVeiculos(lista);
-
-  await enviarAoWebApp({ tipo: "veiculos", data, registro: reg });
-
-  msgVeiculo.classList.remove("hidden");
-  setTimeout(() => msgVeiculo.classList.add("hidden"), 2000);
-
-  formVeiculos.reset();
-};
-
-function renderVeiculos(lista) {
-  registrosVeiculosBody.innerHTML = "";
-  lista.forEach(r => {
-    registrosVeiculosBody.innerHTML += `
-      <tr class="border-b">
-        <td class="px-3 py-2">${escapeHTML(r.placa)}</td>
-        <td class="px-3 py-2">${escapeHTML(r.hora)}</td>
-        <td class="px-3 py-2">${escapeHTML(r.motivo)}</td>
-        <td class="px-3 py-2">${escapeHTML(r.operador)}</td>
-        <td class="px-3 py-2 text-right">
-          <button class="text-red-600" onclick="delVeiculo('${r.id}')">✖</button>
-        </td>
-      </tr>`;
+  filtered.forEach(r => {
+    const card = makeCard(r);
+    recordsContainer.appendChild(card);
   });
 }
 
-function delVeiculo(id) {
-  const data = datePicker.value;
-  const key = keyFor("veiculos", data);
-  let lista = carregarLocal(key, []);
-  lista = lista.filter(r => r.id !== id);
-  salvarLocal(key, lista);
-  renderVeiculos(lista);
+/* ------------- auto-refresh opcional (a cada 30s) ------------- */
+let autoRefreshTimer = null;
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(loadAndRender, 30000); // 30s
 }
-
-/* ============== BICICLETA ============== */
-let fotosBicicleta = [];
-
-fotoBicicleta.onchange = () => {
-  const file = fotoBicicleta.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    fotosBicicleta.push(reader.result);
-    renderFotos(previewBicicleta, fotosBicicleta);
-  };
-  reader.readAsDataURL(file);
-};
-
-function renderFotos(container, list) {
-  container.innerHTML = list.map(img => `<img class="preview-img" src="${img}">`).join("");
-}
-
-btnSalvarBicicleta.onclick = async () => {
-  const data = datePicker.value;
-
-  await enviarAoWebApp({
-    tipo: "bicicleta",
-    data,
-    anotacoes: anotacoesBicicleta.value,
-    fotos: fotosBicicleta
-  });
-
-  msgSalvarBic.classList.remove("hidden");
-  setTimeout(() => msgSalvarBic.classList.add("hidden"), 2000);
-};
-
-/* ============== FECHAMENTO ============== */
-let fotosFechamento = [];
-
-fotoFechamento.onchange = () => {
-  const file = fotoFechamento.files[0];
-  const r = new FileReader();
-  r.onload = () => {
-    fotosFechamento.push(r.result);
-    renderFotos(previewFechamento, fotosFechamento);
-  };
-  r.readAsDataURL(file);
-};
-
-formFechamento.onsubmit = async e => {
-  e.preventDefault();
-
-  const data = datePicker.value;
-
-  await enviarAoWebApp({
-    tipo: "fechamento",
-    data,
-    alteracoes: alteracoesTerminais.value,
-    credencial: credencialGuarita.checked,
-    chave: chaveGuarita.checked,
-    entrada: horaFechEntrada.value,
-    saida: horaFechSaida.value,
-    pedestre: horaFechPedestre.value,
-    fotos: fotosFechamento
-  });
-
-  msgFech.classList.remove("hidden");
-  setTimeout(() => msgFech.classList.add("hidden"), 2000);
-
-  formFechamento.reset();
-};
-
-/* ============== RELATÓRIO ============== */
-let fotosRelatorio = [];
-
-fotoRelatorio.onchange = () => {
-  const file = fotoRelatorio.files[0];
-  const r = new FileReader();
-  r.onload = () => {
-    fotosRelatorio.push(r.result);
-    renderFotos(previewRelatorio, fotosRelatorio);
-  };
-  r.readAsDataURL(file);
-};
-
-formRelatorio.onsubmit = async e => {
-  e.preventDefault();
-
-  await enviarAoWebApp({
-    tipo: "relatorio",
-    data: relData.value,
-    nome: relNome.value,
-    turno: relTurno.value,
-    info: relInfo.value,
-    fotos: fotosRelatorio
-  });
-
-  msgRel.classList.remove("hidden");
-  setTimeout(() => msgRel.classList.add("hidden"), 2000);
-
-  formRelatorio.reset();
-};
-
-/* ============== SUPERVISOR ============== */
-let fotosInfo = [];
-
-fotoInfo.onchange = () => {
-  const file = fotoInfo.files[0];
-  const r = new FileReader();
-  r.onload = () => {
-    fotosInfo.push(r.result);
-    renderFotos(previewInfo, fotosInfo);
-  };
-  r.readAsDataURL(file);
-};
-
-btnSalvarInfo.onclick = async () => {
-  const data = datePicker.value;
-
-  await enviarAoWebApp({
-    tipo: "infoSupervisor",
-    data,
-    descricao: infoDescricao.value,
-    fotos: fotosInfo
-  });
-
-  msgInfo.classList.remove("hidden");
-  setTimeout(() => msgInfo.classList.add("hidden"), 2000);
-};
-
-/* ============== CARREGAR O DIA ============== */
-function carregarDia() {
-  const data = datePicker.value;
-
-  renderVeiculos(carregarLocal(keyFor("veiculos", data), []));
-
-  fotosBicicleta = [];
-  previewBicicleta.innerHTML = "";
-
-  fotosFechamento = [];
-  previewFechamento.innerHTML = "";
-
-  fotosRelatorio = [];
-  previewRelatorio.innerHTML = "";
-
-  fotosInfo = [];
-  previewInfo.innerHTML = "";
-}
-
-carregarDia();
+startAutoRefresh();
 
 </script>
 
