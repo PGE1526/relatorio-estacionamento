@@ -209,8 +209,8 @@
   </div>
 
 <script>
-/* ---------- CONFIG: sua URL do Web App (substitua se necessário) ---------- */
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbx0Rf9qSgLxtDM3fMcQJLgnRKSck_k_ao6bV4N0zYblBp0QQriFnniylkHnQZY1M8ou/exec";
+/* ---------- CONFIG: sua URL do Web App (ATUALIZADA) ---------- */
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzRK4eb_HbTTwwPs2ZG4xxVj_mRk77gQ8xlU3V6psh011dfdotlGrazSXYVisqL/exec";
 
 /* ---------- utilitários ---------- */
 let selectedDate = new Date().toISOString().slice(0,10);
@@ -474,7 +474,7 @@ const listaRelatorios = document.getElementById('listaRelatorios');
 let relatorios = [];
 function renderRelatorios(){
   listaRelatorios.innerHTML='';
-  if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600">Nenhum relatório para a data selecionada.</p>'; return; }
+  if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600'>Nenhum relatório para a data selecionada.</p>'; return; }
   relatorios.forEach(r=>{
     const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
     const nome = document.createElement('div'); nome.className='text-sm'; nome.textContent = `Nome: ${r.nome}`; div.appendChild(nome);
