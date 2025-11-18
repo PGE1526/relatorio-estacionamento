@@ -177,6 +177,7 @@
 
   </main>
 
+  <!-- Modal edição veículo -->
   <div id="modalEdit" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
     <div class="bg-white rounded shadow p-4 w-full max-w-md">
       <h4 class="font-semibold mb-3">Editar Registro</h4>
@@ -191,7 +192,7 @@
   </div>
 
 <script>
-/* ---------- CONFIG: sua URL do Web App já inserida ---------- */
+/* ---------- CONFIG: sua URL do Web App ---------- */
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycby2Ftp5u1u6nJ5AJdy7gWuzEK7inZvSTT3Tx1IPAVY4tMI9BJpneFHEiAt0l20_eiGv/exec";
 
 /* ---------- utilitários ---------- */
@@ -250,7 +251,7 @@ tabs.infoBtn.addEventListener('click', e=>openTab(e,'info'));
 setActiveTabButton(tabs.veiculosBtn);
 tabContents.veiculos.classList.remove('hidden');
 
-/* ---------- veículos ---------- */
+/* ---------- veículos (render + CRUD local) ---------- */
 const placaInput = document.getElementById('placaInput');
 const placaErro = document.getElementById('placaErro');
 const regexPlaca = /^[A-Z]{3}-\d[A-Z0-9]\d{2}$/;
@@ -259,12 +260,132 @@ const registrosVeiculosBody = document.getElementById('registrosVeiculosBody');
 let registrosVeiculos = [];
 placaInput.addEventListener('input', e=>{ let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); if(v.length>3) v = v.slice(0,3)+'-'+v.slice(3,7); e.target.value = v.slice(0,8); placaErro.classList.add('hidden'); placaInput.classList.remove('border-red-500'); });
 function validarPlaca(p){ return regexPlaca.test((p||'').toUpperCase()); }
-function renderVeiculos(){ registrosVeiculosBody.innerHTML=''; if(!registrosVeiculos.length){ registrosVeiculosBody.innerHTML='<tr><td class="px-3 py-6 text-gray-500" colspan="5">Nenhum registro para a data selecionada.</td></tr>'; return; } registrosVeiculos.forEach(r=>{ const tr=document.createElement('tr'); tr.style.position='relative'; tr.innerHTML = `<td class="border px-3 py-2 text-sm">${escapeHTML(r.placa)}</td><td class="border px-3 py-2 text-sm">${escapeHTML(r.hora)}</td><td class="border px-3 py-2 text-sm break-words">${escapeHTML(r.motivo)}</td><td class="border px-3 py-2 text-sm">${escapeHTML(r.operador)}</td><td class="border px-3 py-2 text-center"><div class="relative inline-block"><button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" onclick="abrirMenuRegistro(event,'${r.id}')">⋮</button><div id="menu-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow"><button class="block w-full text-left px-3 py-2 hover:bg-gray-100" onclick="abrirEditar('${r.id}')">Editar</button><button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600" onclick="excluirRegistro('${r.id}')">Excluir</button></div></div></td>`; registrosVeiculosBody.appendChild(tr); }); }
+
+function renderVeiculos(){
+  registrosVeiculosBody.innerHTML='';
+  if(!registrosVeiculos.length){
+    registrosVeiculosBody.innerHTML='<tr><td class="px-3 py-6 text-gray-500" colspan="5">Nenhum registro para a data selecionada.</td></tr>';
+    return;
+  }
+  registrosVeiculos.forEach(r=>{
+    const tr=document.createElement('tr'); tr.style.position='relative';
+    tr.innerHTML = `
+      <td class="border px-3 py-2 text-sm">${escapeHTML(r.placa)}</td>
+      <td class="border px-3 py-2 text-sm">${escapeHTML(r.hora)}</td>
+      <td class="border px-3 py-2 text-sm break-words">${escapeHTML(r.motivo)}</td>
+      <td class="border px-3 py-2 text-sm">${escapeHTML(r.operador)}</td>
+      <td class="border px-3 py-2 text-center">
+        <div class="relative inline-block">
+          <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" onclick="abrirMenuRegistro(event,'${r.id}')">⋮</button>
+          <div id="menu-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
+            <button class="block w-full text-left px-3 py-2 hover:bg-gray-100" onclick="abrirEditar('${r.id}')">Editar</button>
+            <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600" onclick="excluirRegistro('${r.id}')">Excluir</button>
+          </div>
+        </div>
+      </td>`;
+    registrosVeiculosBody.appendChild(tr);
+  });
+}
+
 document.addEventListener('click', ()=>{ document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); document.querySelectorAll('[id^="menuf-"]').forEach(m=>m.classList.add('hidden')); document.querySelectorAll('[id^="menur-"]').forEach(m=>m.classList.add('hidden')); });
 function abrirMenuRegistro(e,id){ e.stopPropagation(); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); const menu=document.getElementById(`menu-${id}`); if(menu) menu.classList.toggle('hidden'); }
-formVeiculos.addEventListener('submit', ev=>{ ev.preventDefault(); const placa = placaInput.value.trim().toUpperCase(); const hora = document.getElementById('horaInput').value.trim(); const motivo = document.getElementById('motivoInput').value.trim(); const operador = document.getElementById('operadorInput').value.trim(); if(!validarPlaca(placa)){ placaErro.classList.remove('hidden'); placaInput.classList.add('border-red-500'); return; } if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; } const novo={id:genId(),placa,hora,motivo,operador}; registrosVeiculos.push(novo); salvar(keyFor('veiculos'),registrosVeiculos); renderVeiculos(); formVeiculos.reset(); document.getElementById('msgVeiculo').classList.remove('hidden'); setTimeout(()=>document.getElementById('msgVeiculo').classList.add('hidden'),1600); });
 
-/* ---------- bicicleta (construção correta da tabela) ---------- */
+/* adicionar registro */
+formVeiculos.addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const placa = placaInput.value.trim().toUpperCase();
+  const hora = document.getElementById('horaInput').value.trim();
+  const motivo = document.getElementById('motivoInput').value.trim();
+  const operador = document.getElementById('operadorInput').value.trim();
+  if(!validarPlaca(placa)){ placaErro.classList.remove('hidden'); placaInput.classList.add('border-red-500'); return; }
+  if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
+  const novo = { id: genId(), placa, hora, motivo, operador };
+  registrosVeiculos.push(novo);
+  salvar(keyFor('veiculos'), registrosVeiculos);
+  renderVeiculos();
+  formVeiculos.reset();
+  document.getElementById('msgVeiculo').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('msgVeiculo').classList.add('hidden'),1600);
+
+  // enviar ao Web App (opcional): acao = salvar_veiculo
+  try{
+    if(WEBAPP_URL && !WEBAPP_URL.includes('COLE_AQUI')){
+      const payload = { acao:'salvar_veiculo', data:selectedDate, registro:novo };
+      const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      console.log('WebApp save vehicle:', await resp.text());
+    }
+  }catch(err){ console.error('Erro enviar veiculo:',err); }
+});
+
+/* ---------- edição / exclusão veículos (modal) ---------- */
+const modalEdit = document.getElementById('modalEdit');
+const editPlaca = document.getElementById('editPlaca');
+const editHora = document.getElementById('editHora');
+const editMotivo = document.getElementById('editMotivo');
+const editOperador = document.getElementById('editOperador');
+const btnCancelEdit = document.getElementById('btnCancelEdit');
+const btnSaveEdit = document.getElementById('btnSaveEdit');
+let currentEditId = null;
+
+function abrirEditar(id){
+  const r = registrosVeiculos.find(x=>x.id===id);
+  if(!r) return;
+  currentEditId = id;
+  editPlaca.value = r.placa || '';
+  editHora.value = r.hora || '';
+  editMotivo.value = r.motivo || '';
+  editOperador.value = r.operador || '';
+  modalEdit.classList.remove('hidden');
+}
+
+btnCancelEdit.addEventListener('click', ()=>{ currentEditId = null; modalEdit.classList.add('hidden'); });
+
+btnSaveEdit.addEventListener('click', async ()=>{
+  if(!currentEditId) return;
+  const placa = (editPlaca.value||'').trim().toUpperCase();
+  const hora = (editHora.value||'').trim();
+  const motivo = (editMotivo.value||'').trim();
+  const operador = (editOperador.value||'').trim();
+  if(!validarPlaca(placa)){ alert('Placa inválida.'); return; }
+  if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
+  const idx = registrosVeiculos.findIndex(x=>x.id===currentEditId);
+  if(idx===-1){ modalEdit.classList.add('hidden'); return; }
+  registrosVeiculos[idx] = { id: currentEditId, placa, hora, motivo, operador };
+  salvar(keyFor('veiculos'), registrosVeiculos);
+  renderVeiculos();
+  modalEdit.classList.add('hidden');
+
+  // enviar edição ao Web App (acao: salvar_veiculo)
+  try{
+    if(WEBAPP_URL && !WEBAPP_URL.includes('COLE_AQUI')){
+      const payload = { acao:'salvar_veiculo', data:selectedDate, registro: registrosVeiculos[idx] };
+      const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      console.log('WebApp edit vehicle:', await resp.text());
+    }
+  }catch(err){ console.error('Erro enviar edição:',err); }
+
+  currentEditId = null;
+});
+
+function excluirRegistro(id){
+  if(!confirm('Excluir este registro?')) return;
+  registrosVeiculos = registrosVeiculos.filter(r=>r.id!==id);
+  salvar(keyFor('veiculos'), registrosVeiculos);
+  renderVeiculos();
+
+  // notificar Web App (acao: excluir_veiculo)
+  (async ()=>{
+    try{
+      if(WEBAPP_URL && !WEBAPP_URL.includes('COLE_AQUI')){
+        const payload = { acao:'excluir_veiculo', data:selectedDate, id };
+        const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        console.log('WebApp delete vehicle:', await resp.text());
+      }
+    }catch(err){ console.error('Erro notificar exclusão:', err); }
+  })();
+}
+
+/* ---------- bicicleta (construção da tabela + eventos) ---------- */
 const bicicletaTableEl = document.getElementById('bicicletaTable');
 const mediaEl = document.getElementById('mediaBicicleta');
 const anotacoesEl = document.getElementById('anotacoesBicicleta');
@@ -285,7 +406,6 @@ function construirTabelaBicicleta(){
 }
 
 function conectarEventosBicicleta(){
-  // remove event listeners duplicates by cloning inputs after render
   document.querySelectorAll('.bicicletaInput').forEach(inp=>{
     inp.addEventListener('input', ()=>{
       const idx = Number(inp.dataset.index);
@@ -300,7 +420,6 @@ function conectarEventosBicicleta(){
       calcularMedia();
     });
   });
-  anotacoesEl.removeEventListener?.('input', ()=>{}); // no-op guard
   anotacoesEl.addEventListener('input', ()=>{
     bicicletaData.anotacoes = anotacoesEl.value;
     salvar(keyFor('bicicleta'), bicicletaData);
@@ -374,34 +493,11 @@ function fontForElement(el){
   return `${fontWeight} ${fontSize} ${fontFamily}`;
 }
 
-/* ---------- Fechamento (hard-wrap ao salvar) ---------- */
+/* ---------- Fechamento (hard-wrap) ---------- */
 const formFechamento = document.getElementById('formFechamento');
 const listaFechamentos = document.getElementById('listaFechamentos');
 let fechamentos = [];
-function renderFechamentos(){
-  listaFechamentos.innerHTML='';
-  if(!fechamentos.length){ listaFechamentos.innerHTML='<p class="text-sm text-gray-600">Nenhum fechamento salvo para a data selecionada.</p>'; return; }
-  fechamentos.forEach(r=>{
-    const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
-    const altLabel = document.createElement('div'); altLabel.className='text-sm'; const s= document.createElement('strong'); s.textContent='Alterações nos terminais: '; altLabel.appendChild(s);
-    const altText = document.createElement('div'); altText.className='text-sm preserve'; altText.textContent = r.alteracoes || '';
-    div.appendChild(altLabel); div.appendChild(altText);
-    const cred = document.createElement('div'); cred.className='text-sm'; cred.textContent = `Credencial na guarita: ${r.credencial ? 'Sim':'Não'}`; div.appendChild(cred);
-    const chave = document.createElement('div'); chave.className='text-sm'; chave.textContent = `Chave na guarita: ${r.chave ? 'Sim':'Não'}`; div.appendChild(chave);
-    const he = document.createElement('div'); he.className='text-sm'; he.textContent = `Hora fechamento entrada: ${r.horaEntrada||''}`; div.appendChild(he);
-    const hs = document.createElement('div'); hs.className='text-sm'; hs.textContent = `Hora fechamento saída: ${r.horaSaida||''}`; div.appendChild(hs);
-    const hp = document.createElement('div'); hp.className='text-sm'; hp.textContent = `Hora fechamento pedestre: ${r.horaPedestre||''}`; div.appendChild(hp);
-    const menu = document.createElement('div'); menu.className='absolute right-2 top-2';
-    menu.innerHTML = `<button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" onclick="abrirMenuFechamento(event,'menuf-${r.id}')">⋮</button>
-      <div id="menuf-${r.id}" class="hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow z-50">
-        <button class="block w-full text-left px-3 py-2 hover:bg-gray-100" onclick="editarFechamento('${r.id}')">Editar</button>
-        <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600" onclick="excluirFechamento('${r.id}')">Excluir</button>
-      </div>`;
-    div.appendChild(menu);
-    listaFechamentos.appendChild(div);
-  });
-}
-function abrirMenuFechamento(e,id){ e.stopPropagation(); document.querySelectorAll('[id^="menuf-"]').forEach(m=>m.classList.add('hidden')); const menu=document.getElementById(id); if(menu) menu.classList.toggle('hidden'); }
+function renderFechamentos(){ listaFechamentos.innerHTML=''; if(!fechamentos.length){ listaFechamentos.innerHTML='<p class="text-sm text-gray-600">Nenhum fechamento salvo para a data selecionada.</p>'; return; } fechamentos.forEach(r=>{ const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50'; const altLabel = document.createElement('div'); altLabel.className='text-sm'; const s=document.createElement('strong'); s.textContent='Alterações nos terminais: '; altLabel.appendChild(s); const altText = document.createElement('div'); altText.className='text-sm preserve'; altText.textContent = r.alteracoes || ''; div.appendChild(altLabel); div.appendChild(altText); const cred = document.createElement('div'); cred.className='text-sm'; cred.textContent = `Credencial na guarita: ${r.credencial ? 'Sim':'Não'}`; div.appendChild(cred); const chave = document.createElement('div'); chave.className='text-sm'; chave.textContent = `Chave na guarita: ${r.chave ? 'Sim':'Não'}`; div.appendChild(chave); const he = document.createElement('div'); he.className='text-sm'; he.textContent = `Hora fechamento entrada: ${r.horaEntrada||''}`; div.appendChild(he); const hs = document.createElement('div'); hs.className='text-sm'; hs.textContent = `Hora fechamento saída: ${r.horaSaida||''}`; div.appendChild(hs); const hp = document.createElement('div'); hp.className='text-sm'; hp.textContent = `Hora fechamento pedestre: ${r.horaPedestre||''}`; div.appendChild(hp); listaFechamentos.appendChild(div); }); }
 formFechamento.addEventListener('submit', ev=>{
   ev.preventDefault();
   const ta = document.getElementById('alteracoesTerminais');
@@ -422,30 +518,12 @@ formFechamento.addEventListener('submit', ev=>{
   document.getElementById('msgFech').classList.remove('hidden');
   setTimeout(()=>document.getElementById('msgFech').classList.add('hidden'),1200);
 });
-function editarFechamento(id){ const r = fechamentos.find(x=>x.id===id); if(!r) return; document.getElementById('alteracoesTerminais').value = r.alteracoes || ''; document.getElementById('credencialGuarita').checked = !!r.credencial; document.getElementById('chaveGuarita').checked = !!r.chave; document.getElementById('horaFechEntrada').value = r.horaEntrada || ''; document.getElementById('horaFechSaida').value = r.horaSaida || ''; document.getElementById('horaFechPedestre').value = r.horaPedestre || ''; fechamentos = fechamentos.filter(x=>x.id!==id); salvar(keyFor('fechamento'),fechamentos); renderFechamentos(); document.getElementById(`menuf-${id}`)?.classList.add('hidden'); }
-function excluirFechamento(id){ if(!confirm('Excluir este fechamento?')) return; fechamentos = fechamentos.filter(x=>x.id!==id); salvar(keyFor('fechamento'),fechamentos); renderFechamentos(); }
 
-/* ---------- Relatórios (hard-wrap) ---------- */
+/* ---------- Relatórios ---------- */
 const formRelatorio = document.getElementById('formRelatorio');
 const listaRelatorios = document.getElementById('listaRelatorios');
 let relatorios = [];
-function renderRelatorios(){
-  listaRelatorios.innerHTML='';
-  if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600">Nenhum relatório para a data selecionada.</p>'; return; }
-  relatorios.forEach(r=>{
-    const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
-    const nome = document.createElement('div'); nome.className='text-sm'; nome.textContent = `Nome: ${r.nome}`; div.appendChild(nome);
-    const data = document.createElement('div'); data.className='text-sm'; data.textContent = `Data: ${r.data}`; div.appendChild(data);
-    const turnoLabel = r.turno === '08-20' ? '08:00 - 20:00' : (r.turno === '11-23' ? '11:00 - 23:00' : '13:00 - 01:00');
-    const turnoDiv = document.createElement('div'); turnoDiv.className='text-sm'; turnoDiv.textContent = `Turno: ${turnoLabel}`; div.appendChild(turnoDiv);
-    const infoLabel = document.createElement('div'); infoLabel.className='text-sm'; const s=document.createElement('strong'); s.textContent='Informações: '; infoLabel.appendChild(s);
-    const infoText = document.createElement('div'); infoText.className='text-sm preserve'; infoText.textContent = r.info || ''; div.appendChild(infoLabel); div.appendChild(infoText);
-    const menu = document.createElement('div'); menu.className='absolute right-2 top-2'; menu.innerHTML = `<button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" onclick="abrirMenuRelatorio(event,'menur-${r.id}')">⋮</button><div id="menur-${r.id}" class="hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow z-50"><button class="block w-full text-left px-3 py-2 hover:bg-gray-100" onclick="editarRelatorio('${r.id}')">Editar</button><button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600" onclick="excluirRelatorio('${r.id}')">Excluir</button></div>`; div.appendChild(menu);
-    listaRelatorios.appendChild(div);
-  });
-}
-function abrirMenuRelatorio(e,id){ e.stopPropagation(); document.querySelectorAll('[id^="menur-"]').forEach(m=>m.classList.add('hidden')); const menu=document.getElementById(id); if(menu) menu.classList.toggle('hidden'); }
-
+function renderRelatorios(){ listaRelatorios.innerHTML=''; if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600">Nenhum relatório para a data selecionada.</p>'; return; } relatorios.forEach(r=>{ const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50'; const nome = document.createElement('div'); nome.className='text-sm'; nome.textContent = `Nome: ${r.nome}`; div.appendChild(nome); const data = document.createElement('div'); data.className='text-sm'; data.textContent = `Data: ${r.data}`; div.appendChild(data); const turnoLabel = r.turno === '08-20' ? '08:00 - 20:00' : (r.turno === '11-23' ? '11:00 - 23:00' : '13:00 - 01:00'); const turnoDiv = document.createElement('div'); turnoDiv.className='text-sm'; turnoDiv.textContent = `Turno: ${turnoLabel}`; div.appendChild(turnoDiv); const infoLabel = document.createElement('div'); infoLabel.className='text-sm'; const s=document.createElement('strong'); s.textContent='Informações: '; infoLabel.appendChild(s); const infoText = document.createElement('div'); infoText.className='text-sm preserve'; infoText.textContent = r.info || ''; div.appendChild(infoLabel); div.appendChild(infoText); listaRelatorios.appendChild(div); }); }
 formRelatorio.addEventListener('submit', ev=>{
   ev.preventDefault();
   const nome = document.getElementById('relNome').value.trim();
@@ -466,9 +544,6 @@ formRelatorio.addEventListener('submit', ev=>{
   document.getElementById('msgRel').classList.remove('hidden');
   setTimeout(()=>document.getElementById('msgRel').classList.add('hidden'),1200);
 });
-
-function editarRelatorio(id){ const r = relatorios.find(x=>x.id===id); if(!r) return; document.getElementById('relNome').value = r.nome || ''; document.getElementById('relData').value = r.data || selectedDate; document.getElementById('relTurno').value = r.turno || '08-20'; document.getElementById('relInfo').value = r.info || ''; relatorios = relatorios.filter(x=>x.id!==id); salvar(keyFor('relatorio'),relatorios); renderRelatorios(); document.getElementById(`menur-${id}`)?.classList.add('hidden'); }
-function excluirRelatorio(id){ if(!confirm('Excluir este relatório?')) return; relatorios = relatorios.filter(x=>x.id!==id); salvar(keyFor('relatorio'),relatorios); renderRelatorios(); }
 
 /* ---------- Upload de fotos: preview + envio ao Apps Script ---------- */
 function setupPhotoUpload(inputId, previewContainerId, sectionLabel, extraDataFn){
@@ -499,7 +574,7 @@ function setupPhotoUpload(inputId, previewContainerId, sectionLabel, extraDataFn
         const resp = await fetch(WEBAPP_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ acao:'salvar_imagem', payload })
         });
         const text = await resp.text();
         alert("Foto salva no Google Drive: " + text);
@@ -548,12 +623,7 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElem
 window.abrirMenuRegistro = abrirMenuRegistro;
 window.abrirEditar = abrirEditar;
 window.excluirRegistro = excluirRegistro;
-window.abrirMenuFechamento = abrirMenuFechamento;
-window.editarFechamento = editarFechamento;
-window.excluirFechamento = excluirFechamento;
-window.abrirMenuRelatorio = abrirMenuRelatorio;
-window.editarRelatorio = editarRelatorio;
-window.excluirRelatorio = excluirRelatorio;
+
 </script>
 
 </body>
