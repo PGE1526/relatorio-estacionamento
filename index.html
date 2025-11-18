@@ -15,6 +15,14 @@
     textarea, input { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; font-size:14px; line-height:1.4; }
     .preview-img{max-width:160px; border-radius:6px; box-shadow:0 0 6px rgba(0,0,0,0.08)}
     .preview-grid{display:flex; flex-wrap:wrap; gap:10px}
+    /* For mobile tab visibility: make nav horizontally scrollable and allow buttons to flex */
+    .tabs-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .tabs-row { display:flex; gap:8px; padding:6px; }
+    .tabs-row button { flex: 0 0 auto; white-space:nowrap; }
+    @media (max-width:640px){
+      .tabs-row { gap:6px; }
+      .tabs-row button { padding-left:10px;padding-right:10px;}
+    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -25,7 +33,7 @@
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
       <div>
         <h1 class="text-lg font-bold">Relatório diário PGE</h1>
-        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações</p>
+        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações supervisor</p>
       </div>
       <div class="flex items-center gap-2">
         <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">◀</button>
@@ -37,12 +45,16 @@
 
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
-    <nav class="bg-white rounded shadow p-3 flex gap-2">
-      <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold">Veículos</button>
-      <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Bicicleta</button>
-      <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Fechamento da P4</button>
-      <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Relatório diário operador</button>
-      <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Informações</button>
+    <nav class="bg-white rounded shadow p-0">
+      <div class="tabs-scroll">
+        <div class="tabs-row">
+          <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold">Veículos</button>
+          <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Bicicleta</button>
+          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Fechamento da P4</button>
+          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Relatório diário operador</button>
+          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border">Informações supervisor</button>
+        </div>
+      </div>
     </nav>
 
     <!-- Veículos -->
@@ -51,7 +63,11 @@
         <div class="bg-white rounded shadow p-4">
           <h2 class="font-semibold mb-3">Registrar saída</h2>
           <form id="formVeiculos" class="space-y-3" novalidate>
-            <div><label class="block text-sm font-medium mb-1">Placa</label><input type="text" id="placaInput" maxlength="8" class="w-full border rounded px-3 py-2" placeholder="ABC-1234" autocomplete="off"><p id="placaErro" class="hidden text-sm text-red-600 mt-1">Placa inválida.</p></div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Placa</label>
+              <input type="text" id="placaInput" maxlength="8" class="w-full border rounded px-3 py-2" placeholder="ABC-1234" autocomplete="off">
+              <p id="placaErro" class="hidden text-sm text-red-600 mt-1">Placa inválida.</p>
+            </div>
             <div><label class="block text-sm font-medium mb-1">Hora</label><input type="time" id="horaInput" class="w-full border rounded px-3 py-2"></div>
             <div><label class="block text-sm font-medium mb-1">Motivo</label><input type="text" id="motivoInput" class="w-full border rounded px-3 py-2"></div>
             <div><label class="block text-sm font-medium mb-1">Operador</label><input type="text" id="operadorInput" class="w-full border rounded px-3 py-2"></div>
@@ -156,11 +172,11 @@
       </div>
     </section>
 
-    <!-- Informações -->
+    <!-- Informações supervisor -->
     <section id="info" class="tabcontent hidden">
       <div class="bg-white rounded shadow p-4 space-y-4">
-        <h2 class="font-semibold">Informações gerais</h2>
-        <p class="text-sm text-gray-600">Adicione fotos gerais do dia (câmera ou galeria). As imagens serão salvas no Google Drive.</p>
+        <h2 class="font-semibold">Informações supervisor</h2>
+        <p class="text-sm text-gray-600">Adicione fotos gerais do dia e observações do supervisor. Clique em Salvar Informações para gravar no Drive.</p>
 
         <div>
           <label class="block text-sm font-medium mb-1">Foto</label>
@@ -169,8 +185,13 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Descrição</label>
-          <textarea id="infoDescricao" rows="3" class="w-full border rounded px-3 py-2" placeholder="Observações relacionadas à foto..."></textarea>
+          <label class="block text-sm font-medium mb-1">Descrição do supervisor</label>
+          <textarea id="infoDescricao" rows="4" class="w-full border rounded px-3 py-2" placeholder="Observações do supervisor..."></textarea>
+        </div>
+
+        <div class="flex gap-3">
+          <button id="btnSalvarInfo" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar Informações</button>
+          <span id="msgInfo" class="text-sm text-green-700 hidden">Informações salvas.</span>
         </div>
       </div>
     </section>
@@ -192,8 +213,8 @@
   </div>
 
 <script>
-/* ---------- CONFIG: sua URL do Web App ---------- */
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycby2Ftp5u1u6nJ5AJdy7gWuzEK7inZvSTT3Tx1IPAVY4tMI9BJpneFHEiAt0l20_eiGv/exec";
+/* ---------- CONFIG: sua URL do Web App (implante substitua se necessário) ---------- */
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbx0Rf9qSgLxtDM3fMcQJLgnRKSck_k_ao6bV4N0zYblBp0QQriFnniylkHnQZY1M8ou/exec";
 
 /* ---------- utilitários ---------- */
 let selectedDate = new Date().toISOString().slice(0,10);
@@ -202,8 +223,8 @@ const prevDayBtn = document.getElementById('prevDay');
 const nextDayBtn = document.getElementById('nextDay');
 
 function keyFor(kind, date = selectedDate){ return `${kind}_${date}`; }
-function salvar(chave, obj){ localStorage.setItem(chave, JSON.stringify(obj)); }
-function carregar(chave, padrao){ const raw = localStorage.getItem(chave); return raw ? JSON.parse(raw) : padrao; }
+function salvarLocal(chave, obj){ localStorage.setItem(chave, JSON.stringify(obj)); }
+function carregarLocal(chave, padrao){ const raw = localStorage.getItem(chave); return raw ? JSON.parse(raw) : padrao; }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function escapeHTML(str=''){ return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
@@ -242,6 +263,8 @@ function openTab(evt,name){
   Object.values(tabContents).forEach(c=>c.classList.add('hidden'));
   tabContents[name].classList.remove('hidden');
   if(evt&&evt.currentTarget) setActiveTabButton(evt.currentTarget);
+  // scroll active tab into view for small screens
+  try{ evt.currentTarget.scrollIntoView({inline:'center', behavior:'smooth'}); }catch(e){}
 }
 tabs.veiculosBtn.addEventListener('click', e=>openTab(e,'veiculos'));
 tabs.bicicletaBtn.addEventListener('click', e=>openTab(e,'bicicleta'));
@@ -290,7 +313,6 @@ function renderVeiculos(){
 document.addEventListener('click', ()=>{ document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); document.querySelectorAll('[id^="menuf-"]').forEach(m=>m.classList.add('hidden')); document.querySelectorAll('[id^="menur-"]').forEach(m=>m.classList.add('hidden')); });
 function abrirMenuRegistro(e,id){ e.stopPropagation(); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); const menu=document.getElementById(`menu-${id}`); if(menu) menu.classList.toggle('hidden'); }
 
-/* adicionar registro */
 formVeiculos.addEventListener('submit', async (ev)=>{
   ev.preventDefault();
   const placa = placaInput.value.trim().toUpperCase();
@@ -301,13 +323,13 @@ formVeiculos.addEventListener('submit', async (ev)=>{
   if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
   const novo = { id: genId(), placa, hora, motivo, operador };
   registrosVeiculos.push(novo);
-  salvar(keyFor('veiculos'), registrosVeiculos);
+  salvarLocal(keyFor('veiculos'), registrosVeiculos);
   renderVeiculos();
   formVeiculos.reset();
   document.getElementById('msgVeiculo').classList.remove('hidden');
   setTimeout(()=>document.getElementById('msgVeiculo').classList.add('hidden'),1600);
 
-  // enviar ao Web App (opcional): acao = salvar_veiculo
+  // enviar ao Web App
   try{
     if(WEBAPP_URL && !WEBAPP_URL.includes('COLE_AQUI')){
       const payload = { acao:'salvar_veiculo', data:selectedDate, registro:novo };
@@ -351,11 +373,11 @@ btnSaveEdit.addEventListener('click', async ()=>{
   const idx = registrosVeiculos.findIndex(x=>x.id===currentEditId);
   if(idx===-1){ modalEdit.classList.add('hidden'); return; }
   registrosVeiculos[idx] = { id: currentEditId, placa, hora, motivo, operador };
-  salvar(keyFor('veiculos'), registrosVeiculos);
+  salvarLocal(keyFor('veiculos'), registrosVeiculos);
   renderVeiculos();
   modalEdit.classList.add('hidden');
 
-  // enviar edição ao Web App (acao: salvar_veiculo)
+  // enviar edição ao Web App
   try{
     if(WEBAPP_URL && !WEBAPP_URL.includes('COLE_AQUI')){
       const payload = { acao:'salvar_veiculo', data:selectedDate, registro: registrosVeiculos[idx] };
@@ -370,7 +392,7 @@ btnSaveEdit.addEventListener('click', async ()=>{
 function excluirRegistro(id){
   if(!confirm('Excluir este registro?')) return;
   registrosVeiculos = registrosVeiculos.filter(r=>r.id!==id);
-  salvar(keyFor('veiculos'), registrosVeiculos);
+  salvarLocal(keyFor('veiculos'), registrosVeiculos);
   renderVeiculos();
 
   // notificar Web App (acao: excluir_veiculo)
@@ -410,19 +432,19 @@ function conectarEventosBicicleta(){
     inp.addEventListener('input', ()=>{
       const idx = Number(inp.dataset.index);
       bicicletaData.valores[idx] = inp.value;
-      salvar(keyFor('bicicleta'), bicicletaData);
+      salvarLocal(keyFor('bicicleta'), bicicletaData);
       calcularMedia();
     });
     inp.addEventListener('blur', ()=>{
       const idx = Number(inp.dataset.index);
       bicicletaData.valores[idx] = inp.value;
-      salvar(keyFor('bicicleta'), bicicletaData);
+      salvarLocal(keyFor('bicicleta'), bicicletaData);
       calcularMedia();
     });
   });
   anotacoesEl.addEventListener('input', ()=>{
     bicicletaData.anotacoes = anotacoesEl.value;
-    salvar(keyFor('bicicleta'), bicicletaData);
+    salvarLocal(keyFor('bicicleta'), bicicletaData);
     document.getElementById('msgBic').classList.remove('hidden');
     setTimeout(()=>document.getElementById('msgBic').classList.add('hidden'),1200);
   });
@@ -497,7 +519,22 @@ function fontForElement(el){
 const formFechamento = document.getElementById('formFechamento');
 const listaFechamentos = document.getElementById('listaFechamentos');
 let fechamentos = [];
-function renderFechamentos(){ listaFechamentos.innerHTML=''; if(!fechamentos.length){ listaFechamentos.innerHTML='<p class="text-sm text-gray-600">Nenhum fechamento salvo para a data selecionada.</p>'; return; } fechamentos.forEach(r=>{ const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50'; const altLabel = document.createElement('div'); altLabel.className='text-sm'; const s=document.createElement('strong'); s.textContent='Alterações nos terminais: '; altLabel.appendChild(s); const altText = document.createElement('div'); altText.className='text-sm preserve'; altText.textContent = r.alteracoes || ''; div.appendChild(altLabel); div.appendChild(altText); const cred = document.createElement('div'); cred.className='text-sm'; cred.textContent = `Credencial na guarita: ${r.credencial ? 'Sim':'Não'}`; div.appendChild(cred); const chave = document.createElement('div'); chave.className='text-sm'; chave.textContent = `Chave na guarita: ${r.chave ? 'Sim':'Não'}`; div.appendChild(chave); const he = document.createElement('div'); he.className='text-sm'; he.textContent = `Hora fechamento entrada: ${r.horaEntrada||''}`; div.appendChild(he); const hs = document.createElement('div'); hs.className='text-sm'; hs.textContent = `Hora fechamento saída: ${r.horaSaida||''}`; div.appendChild(hs); const hp = document.createElement('div'); hp.className='text-sm'; hp.textContent = `Hora fechamento pedestre: ${r.horaPedestre||''}`; div.appendChild(hp); listaFechamentos.appendChild(div); }); }
+function renderFechamentos(){
+  listaFechamentos.innerHTML='';
+  if(!fechamentos.length){ listaFechamentos.innerHTML='<p class="text-sm text-gray-600">Nenhum fechamento salvo para a data selecionada.</p>'; return; }
+  fechamentos.forEach(r=>{
+    const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
+    const altLabel = document.createElement('div'); altLabel.className='text-sm'; const s= document.createElement('strong'); s.textContent='Alterações nos terminais: '; altLabel.appendChild(s);
+    const altText = document.createElement('div'); altText.className='text-sm preserve'; altText.textContent = r.alteracoes || '';
+    div.appendChild(altLabel); div.appendChild(altText);
+    const cred = document.createElement('div'); cred.className='text-sm'; cred.textContent = `Credencial na guarita: ${r.credencial ? 'Sim':'Não'}`; div.appendChild(cred);
+    const chave = document.createElement('div'); chave.className='text-sm'; chave.textContent = `Chave na guarita: ${r.chave ? 'Sim':'Não'}`; div.appendChild(chave);
+    const he = document.createElement('div'); he.className='text-sm'; he.textContent = `Hora fechamento entrada: ${r.horaEntrada||''}`; div.appendChild(he);
+    const hs = document.createElement('div'); hs.className='text-sm'; hs.textContent = `Hora fechamento saída: ${r.horaSaida||''}`; div.appendChild(hs);
+    const hp = document.createElement('div'); hp.className='text-sm'; hp.textContent = `Hora fechamento pedestre: ${r.horaPedestre||''}`; div.appendChild(hp);
+    listaFechamentos.appendChild(div);
+  });
+}
 formFechamento.addEventListener('submit', ev=>{
   ev.preventDefault();
   const ta = document.getElementById('alteracoesTerminais');
@@ -512,7 +549,7 @@ formFechamento.addEventListener('submit', ev=>{
   const horaPedestre = document.getElementById('horaFechPedestre').value;
   const rec = { id: genId(), alteracoes: wrapped, credencial, chave, horaEntrada, horaSaida, horaPedestre };
   fechamentos.push(rec);
-  salvar(keyFor('fechamento'), fechamentos);
+  salvarLocal(keyFor('fechamento'), fechamentos);
   renderFechamentos();
   formFechamento.reset();
   document.getElementById('msgFech').classList.remove('hidden');
@@ -523,7 +560,20 @@ formFechamento.addEventListener('submit', ev=>{
 const formRelatorio = document.getElementById('formRelatorio');
 const listaRelatorios = document.getElementById('listaRelatorios');
 let relatorios = [];
-function renderRelatorios(){ listaRelatorios.innerHTML=''; if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600">Nenhum relatório para a data selecionada.</p>'; return; } relatorios.forEach(r=>{ const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50'; const nome = document.createElement('div'); nome.className='text-sm'; nome.textContent = `Nome: ${r.nome}`; div.appendChild(nome); const data = document.createElement('div'); data.className='text-sm'; data.textContent = `Data: ${r.data}`; div.appendChild(data); const turnoLabel = r.turno === '08-20' ? '08:00 - 20:00' : (r.turno === '11-23' ? '11:00 - 23:00' : '13:00 - 01:00'); const turnoDiv = document.createElement('div'); turnoDiv.className='text-sm'; turnoDiv.textContent = `Turno: ${turnoLabel}`; div.appendChild(turnoDiv); const infoLabel = document.createElement('div'); infoLabel.className='text-sm'; const s=document.createElement('strong'); s.textContent='Informações: '; infoLabel.appendChild(s); const infoText = document.createElement('div'); infoText.className='text-sm preserve'; infoText.textContent = r.info || ''; div.appendChild(infoLabel); div.appendChild(infoText); listaRelatorios.appendChild(div); }); }
+function renderRelatorios(){
+  listaRelatorios.innerHTML='';
+  if(!relatorios.length){ listaRelatorios.innerHTML='<p class="text-sm text-gray-600">Nenhum relatório para a data selecionada.</p>'; return; }
+  relatorios.forEach(r=>{
+    const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
+    const nome = document.createElement('div'); nome.className='text-sm'; nome.textContent = `Nome: ${r.nome}`; div.appendChild(nome);
+    const data = document.createElement('div'); data.className='text-sm'; data.textContent = `Data: ${r.data}`; div.appendChild(data);
+    const turnoLabel = r.turno === '08-20' ? '08:00 - 20:00' : (r.turno === '11-23' ? '11:00 - 23:00' : '13:00 - 01:00');
+    const turnoDiv = document.createElement('div'); turnoDiv.className='text-sm'; turnoDiv.textContent = `Turno: ${turnoLabel}`; div.appendChild(turnoDiv);
+    const infoLabel = document.createElement('div'); infoLabel.className='text-sm'; const s=document.createElement('strong'); s.textContent='Informações: '; infoLabel.appendChild(s);
+    const infoText = document.createElement('div'); infoText.className='text-sm preserve'; infoText.textContent = r.info || ''; div.appendChild(infoLabel); div.appendChild(infoText);
+    listaRelatorios.appendChild(div);
+  });
+}
 formRelatorio.addEventListener('submit', ev=>{
   ev.preventDefault();
   const nome = document.getElementById('relNome').value.trim();
@@ -537,7 +587,7 @@ formRelatorio.addEventListener('submit', ev=>{
   const wrapped = hardWrapText(raw, maxPx, font);
   const rec = { id: genId(), nome, data, turno, info: wrapped };
   relatorios.push(rec);
-  salvar(keyFor('relatorio'), relatorios);
+  salvarLocal(keyFor('relatorio'), relatorios);
   renderRelatorios();
   formRelatorio.reset();
   document.getElementById('relData').value = selectedDate;
@@ -604,16 +654,48 @@ setupPhotoUpload("fotoInfo","previewInfo","informacoes", ()=>({
   descricao: document.getElementById('infoDescricao')?.value || ''
 }));
 
+/* ---------- Função para salvar Informações supervisor no Drive via WebApp ---------- */
+document.getElementById('btnSalvarInfo').addEventListener('click', async ()=>{
+  const descricao = document.getElementById('infoDescricao').value.trim();
+  if(!descricao){ alert('Escreva algo antes de salvar.'); return; }
+  const payload = {
+    acao: 'salvar_informacoes',
+    data: selectedDate,
+    secao: 'informacoes_supervisor',
+    registro: {
+      descricao: descricao,
+      timestamp: new Date().toISOString()
+    }
+  };
+  try{
+    const resp = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const text = await resp.text();
+    document.getElementById('msgInfo').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('msgInfo').classList.add('hidden'),1600);
+    alert('Informações salvas no Drive: ' + text);
+  }catch(err){
+    console.error('Erro ao salvar informações:', err);
+    alert('Falha ao salvar informações no Drive.');
+  }
+});
+
 /* ---------- load / init ---------- */
 function loadAllData(){
-  registrosVeiculos = carregar(keyFor('veiculos'), []);
+  registrosVeiculos = carregarLocal(keyFor('veiculos'), []);
   renderVeiculos();
-  bicicletaData = carregar(keyFor('bicicleta'), { valores: Array(12).fill(''), anotacoes: '' });
+  bicicletaData = carregarLocal(keyFor('bicicleta'), { valores: Array(12).fill(''), anotacoes: '' });
   construirTabelaBicicleta();
-  fechamentos = carregar(keyFor('fechamento'), []);
+  fechamentos = carregarLocal(keyFor('fechamento'), []);
   renderFechamentos();
-  relatorios = carregar(keyFor('relatorio'), []);
+  relatorios = carregarLocal(keyFor('relatorio'), []);
   renderRelatorios();
+  // carregar texto de informações do supervisor se tiver local (opcional)
+  const infoLocal = carregarLocal(keyFor('info'), { descricao: '' });
+  if(infoLocal && infoLocal.descricao) document.getElementById('infoDescricao').value = infoLocal.descricao;
 }
 loadAllData();
 
@@ -623,7 +705,12 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElem
 window.abrirMenuRegistro = abrirMenuRegistro;
 window.abrirEditar = abrirEditar;
 window.excluirRegistro = excluirRegistro;
-
+window.abrirMenuFechamento = abrirMenuFechamento;
+window.editarFechamento = editarFechamento;
+window.excluirFechamento = excluirFechamento;
+window.abrirMenuRelatorio = abrirMenuRelatorio;
+window.editarRelatorio = editarRelatorio;
+window.excluirRelatorio = excluirRelatorio;
 </script>
 
 </body>
