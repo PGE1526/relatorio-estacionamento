@@ -15,7 +15,6 @@
     textarea, input { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; font-size:14px; line-height:1.4; }
     .preview-img{max-width:160px; border-radius:6px; box-shadow:0 0 6px rgba(0,0,0,0.08)}
     .preview-grid{display:flex; flex-wrap:wrap; gap:10px}
-    /* For mobile tab visibility: make nav horizontally scrollable and allow buttons to flex */
     .tabs-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .tabs-row { display:flex; gap:8px; padding:6px; }
     .tabs-row button { flex: 0 0 auto; white-space:nowrap; }
@@ -122,6 +121,11 @@
           <input type="file" id="fotoBicicleta" accept="image/*" capture="environment" class="border rounded px-3 py-2 w-full">
           <div class="preview-grid mt-3" id="previewBicicleta"></div>
         </div>
+
+        <div class="flex gap-2">
+          <button id="btnSalvarBicicleta" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar Bicicleta no Drive</button>
+          <span id="msgSalvarBic" class="text-sm text-green-700 hidden">Enviado ao Drive.</span>
+        </div>
       </div>
     </section>
 
@@ -213,7 +217,7 @@
   </div>
 
 <script>
-/* ---------- CONFIG: sua URL do Web App (implante substitua se necessário) ---------- */
+/* ---------- CONFIG: sua URL do Web App (substitua se necessário) ---------- */
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbx0Rf9qSgLxtDM3fMcQJLgnRKSck_k_ao6bV4N0zYblBp0QQriFnniylkHnQZY1M8ou/exec";
 
 /* ---------- utilitários ---------- */
@@ -263,7 +267,6 @@ function openTab(evt,name){
   Object.values(tabContents).forEach(c=>c.classList.add('hidden'));
   tabContents[name].classList.remove('hidden');
   if(evt&&evt.currentTarget) setActiveTabButton(evt.currentTarget);
-  // scroll active tab into view for small screens
   try{ evt.currentTarget.scrollIntoView({inline:'center', behavior:'smooth'}); }catch(e){}
 }
 tabs.veiculosBtn.addEventListener('click', e=>openTab(e,'veiculos'));
@@ -274,7 +277,7 @@ tabs.infoBtn.addEventListener('click', e=>openTab(e,'info'));
 setActiveTabButton(tabs.veiculosBtn);
 tabContents.veiculos.classList.remove('hidden');
 
-/* ---------- veículos (render + CRUD local) ---------- */
+/* ---------- veículos (render + CRUD local + envio ao Drive) ---------- */
 const placaInput = document.getElementById('placaInput');
 const placaErro = document.getElementById('placaErro');
 const regexPlaca = /^[A-Z]{3}-\d[A-Z0-9]\d{2}$/;
@@ -310,7 +313,7 @@ function renderVeiculos(){
   });
 }
 
-document.addEventListener('click', ()=>{ document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); document.querySelectorAll('[id^="menuf-"]').forEach(m=>m.classList.add('hidden')); document.querySelectorAll('[id^="menur-"]').forEach(m=>m.classList.add('hidden')); });
+document.addEventListener('click', ()=>{ document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); });
 function abrirMenuRegistro(e,id){ e.stopPropagation(); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); const menu=document.getElementById(`menu-${id}`); if(menu) menu.classList.toggle('hidden'); }
 
 formVeiculos.addEventListener('submit', async (ev)=>{
@@ -330,13 +333,7 @@ formVeiculos.addEventListener('submit', async (ev)=>{
   setTimeout(()=>document.getElementById('msgVeiculo').classList.add('hidden'),1600);
 
   // enviar ao Web App
-  try{
-    if(WEBAPP_URL && !WEBAPP_URL.includes('COLE_AQUI')){
-      const payload = { acao:'salvar_veiculo', data:selectedDate, registro:novo };
-      const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      console.log('WebApp save vehicle:', await resp.text());
-    }
-  }catch(err){ console.error('Erro enviar veiculo:',err); }
+  await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro:novo });
 });
 
 /* ---------- edição / exclusão veículos (modal) ---------- */
@@ -377,15 +374,7 @@ btnSaveEdit.addEventListener('click', async ()=>{
   renderVeiculos();
   modalEdit.classList.add('hidden');
 
-  // enviar edição ao Web App
-  try{
-    if(WEBAPP_URL && !WEBAPP_URL.includes('COLE_AQUI')){
-      const payload = { acao:'salvar_veiculo', data:selectedDate, registro: registrosVeiculos[idx] };
-      const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      console.log('WebApp edit vehicle:', await resp.text());
-    }
-  }catch(err){ console.error('Erro enviar edição:',err); }
-
+  await enviarAoWebApp({ acao:'salvar_veiculo', data:selectedDate, registro: registrosVeiculos[idx] });
   currentEditId = null;
 });
 
@@ -395,19 +384,10 @@ function excluirRegistro(id){
   salvarLocal(keyFor('veiculos'), registrosVeiculos);
   renderVeiculos();
 
-  // notificar Web App (acao: excluir_veiculo)
-  (async ()=>{
-    try{
-      if(WEBAPP_URL && !WEBAPP_URL.includes('COLE_AQUI')){
-        const payload = { acao:'excluir_veiculo', data:selectedDate, id };
-        const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        console.log('WebApp delete vehicle:', await resp.text());
-      }
-    }catch(err){ console.error('Erro notificar exclusão:', err); }
-  })();
+  enviarAoWebApp({ acao:'excluir_veiculo', data:selectedDate, id });
 }
 
-/* ---------- bicicleta (construção da tabela + eventos) ---------- */
+/* ---------- bicicleta (local + enviar ao Drive) ---------- */
 const bicicletaTableEl = document.getElementById('bicicletaTable');
 const mediaEl = document.getElementById('mediaBicicleta');
 const anotacoesEl = document.getElementById('anotacoesBicicleta');
@@ -450,72 +430,14 @@ function conectarEventosBicicleta(){
   });
 }
 
-function parseNumero(v){ if((v === '' || v === null || v===undefined) && v!==0) return 0; const s=String(v).trim().replace(',','.'); const n=parseFloat(s); return isNaN(n)?0:n; }
-function calcularMedia(){ const soma = bicicletaData.valores.reduce((acc,cur)=>acc+parseNumero(cur),0); const media = soma/12; mediaEl.textContent = media.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-
-/* Compartilhar bicicleta (mantido) */
-document.getElementById('btnCompartilhar').addEventListener('click', async ()=>{
-  try{
-    const el=document.getElementById('bicicletaCard');
-    const imgs=el.querySelectorAll('img');
-    await Promise.all(Array.from(imgs).map(img=> img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r})));
-    const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
-    const blob = await new Promise(r=>canvas.toBlob(r,'image/png'));
-    const fileName = `bicicleta_${selectedDate}_${new Date().toISOString().slice(11,19).replace(/:/g,'-')}.png`;
-    if(navigator.canShare && navigator.canShare({files:[new File([blob],fileName,{type:'image/png'})]})){
-      try{ await navigator.share({files:[new File([blob],fileName,{type:'image/png'})], title:'Controle de Bicicleta', text:`Registro ${selectedDate}`}); return; }catch(err){}
-    }
-    const url=URL.createObjectURL(blob); window.open(url,'_blank');
-  }catch(err){ alert('Erro ao gerar compartilhamento.'); console.error(err); }
+document.getElementById('btnSalvarBicicleta').addEventListener('click', async ()=>{
+  // Envia os dados completos de bicicleta ao Web App
+  const payload = { acao:'salvar_bicicleta', data:selectedDate, registro: bicicletaData };
+  const res = await enviarAoWebApp(payload);
+  if(res) { document.getElementById('msgSalvarBic').classList.remove('hidden'); setTimeout(()=>document.getElementById('msgSalvarBic').classList.add('hidden'),1200); }
 });
 
-/* ---------- Hard-wrap helper ---------- */
-function hardWrapText(text, maxPx, font) {
-  const paragraphs = String(text).split(/\r\n|\n/);
-  const canvas = hardWrapText._canvas || (hardWrapText._canvas = document.createElement('canvas'));
-  const ctx = canvas.getContext('2d');
-  ctx.font = font;
-  const wrapped = paragraphs.map(par => {
-    const words = par.split(/(\s+)/);
-    let line = '';
-    const lines = [];
-    for (let token of words) {
-      const test = line + token;
-      const w = ctx.measureText(test).width;
-      if (w > maxPx && line !== '') {
-        lines.push(line.trimEnd());
-        if (ctx.measureText(token).width > maxPx) {
-          let chunk = '';
-          for (let ch of token) {
-            const test2 = chunk + ch;
-            if (ctx.measureText(test2).width > maxPx) {
-              lines.push(chunk);
-              chunk = ch;
-            } else chunk = test2;
-          }
-          if (chunk) line = chunk;
-          else line = '';
-        } else {
-          line = token;
-        }
-      } else {
-        line = test;
-      }
-    }
-    if (line) lines.push(line.trimEnd());
-    return lines.join('\n');
-  });
-  return wrapped.join('\n');
-}
-function fontForElement(el){
-  const cs = window.getComputedStyle(el);
-  const fontSize = cs.fontSize || '14px';
-  const fontFamily = cs.fontFamily || 'Arial, sans-serif';
-  const fontWeight = cs.fontWeight || '400';
-  return `${fontWeight} ${fontSize} ${fontFamily}`;
-}
-
-/* ---------- Fechamento (hard-wrap) ---------- */
+/* ---------- Fechamento (salvar local + enviar ao Drive) ---------- */
 const formFechamento = document.getElementById('formFechamento');
 const listaFechamentos = document.getElementById('listaFechamentos');
 let fechamentos = [];
@@ -535,28 +457,31 @@ function renderFechamentos(){
     listaFechamentos.appendChild(div);
   });
 }
-formFechamento.addEventListener('submit', ev=>{
+formFechamento.addEventListener('submit', async (ev)=>{
   ev.preventDefault();
   const ta = document.getElementById('alteracoesTerminais');
   const maxPx = ta.clientWidth - 8;
-  const font = fontForElement(ta);
+  const font = window.getComputedStyle(ta).font;
   const raw = ta.value || '';
-  const wrapped = hardWrapText(raw, maxPx, font);
+  const wrapped = raw; // já pode enviar o texto bruto; Apps Script grava JSON
   const credencial = document.getElementById('credencialGuarita').checked;
   const chave = document.getElementById('chaveGuarita').checked;
   const horaEntrada = document.getElementById('horaFechEntrada').value;
   const horaSaida = document.getElementById('horaFechSaida').value;
   const horaPedestre = document.getElementById('horaFechPedestre').value;
-  const rec = { id: genId(), alteracoes: wrapped, credencial, chave, horaEntrada, horaSaida, horaPedestre };
+  const rec = { id: genId(), alteracoes: wrapped, credencial, chave, horaEntrada, horaSaida, horaPedestre, timestamp: new Date().toISOString() };
   fechamentos.push(rec);
   salvarLocal(keyFor('fechamento'), fechamentos);
   renderFechamentos();
   formFechamento.reset();
   document.getElementById('msgFech').classList.remove('hidden');
   setTimeout(()=>document.getElementById('msgFech').classList.add('hidden'),1200);
+
+  // enviar ao WebApp
+  await enviarAoWebApp({ acao:'salvar_fechamento', data:selectedDate, registro: rec });
 });
 
-/* ---------- Relatórios ---------- */
+/* ---------- Relatórios (local + enviar ao Drive) ---------- */
 const formRelatorio = document.getElementById('formRelatorio');
 const listaRelatorios = document.getElementById('listaRelatorios');
 let relatorios = [];
@@ -574,7 +499,7 @@ function renderRelatorios(){
     listaRelatorios.appendChild(div);
   });
 }
-formRelatorio.addEventListener('submit', ev=>{
+formRelatorio.addEventListener('submit', async (ev)=>{
   ev.preventDefault();
   const nome = document.getElementById('relNome').value.trim();
   if(!nome){ alert('Informe o nome.'); return; }
@@ -582,10 +507,7 @@ formRelatorio.addEventListener('submit', ev=>{
   const turno = document.getElementById('relTurno').value;
   const ta = document.getElementById('relInfo');
   const raw = ta.value || '';
-  const maxPx = ta.clientWidth - 8;
-  const font = fontForElement(ta);
-  const wrapped = hardWrapText(raw, maxPx, font);
-  const rec = { id: genId(), nome, data, turno, info: wrapped };
+  const rec = { id: genId(), nome, data, turno, info: raw, timestamp: new Date().toISOString() };
   relatorios.push(rec);
   salvarLocal(keyFor('relatorio'), relatorios);
   renderRelatorios();
@@ -593,6 +515,9 @@ formRelatorio.addEventListener('submit', ev=>{
   document.getElementById('relData').value = selectedDate;
   document.getElementById('msgRel').classList.remove('hidden');
   setTimeout(()=>document.getElementById('msgRel').classList.add('hidden'),1200);
+
+  // enviar ao WebApp
+  await enviarAoWebApp({ acao:'salvar_relatorio', data:selectedDate, registro: rec });
 });
 
 /* ---------- Upload de fotos: preview + envio ao Apps Script ---------- */
@@ -603,14 +528,16 @@ function setupPhotoUpload(inputId, previewContainerId, sectionLabel, extraDataFn
   input.addEventListener('change', async ()=>{
     const file = input.files && input.files[0];
     if(!file) return;
+    // reduz imagem se muito grande (opcional): converte para JPEG com qualidade 0.8 para economizar banda
     const reader = new FileReader();
     reader.onload = async (e)=>{
+      const dataUrl = e.target.result;
       const img = document.createElement('img');
       img.className = 'preview-img';
-      img.src = e.target.result;
+      img.src = dataUrl;
       preview.prepend(img);
       const payload = {
-        imagem: e.target.result,
+        imagem: dataUrl,
         nomeArquivo: file.name || `${sectionLabel}_${selectedDate}.png`,
         data: selectedDate,
         secao: sectionLabel,
@@ -650,38 +577,35 @@ setupPhotoUpload("fotoRelatorio","previewRelatorio","relatorio", ()=>({
   turno: document.getElementById('relTurno')?.value || '',
   info: document.getElementById('relInfo')?.value || ''
 }));
-setupPhotoUpload("fotoInfo","previewInfo","informacoes", ()=>({
+setupPhotoUpload("fotoInfo","previewInfo","informacoes_supervisor", ()=>({
   descricao: document.getElementById('infoDescricao')?.value || ''
 }));
 
-/* ---------- Função para salvar Informações supervisor no Drive via WebApp ---------- */
+/* ---------- botão salvar Informações supervisor ---------- */
 document.getElementById('btnSalvarInfo').addEventListener('click', async ()=>{
   const descricao = document.getElementById('infoDescricao').value.trim();
   if(!descricao){ alert('Escreva algo antes de salvar.'); return; }
-  const payload = {
-    acao: 'salvar_informacoes',
-    data: selectedDate,
-    secao: 'informacoes_supervisor',
-    registro: {
-      descricao: descricao,
-      timestamp: new Date().toISOString()
-    }
-  };
-  try{
-    const resp = await fetch(WEBAPP_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    const text = await resp.text();
-    document.getElementById('msgInfo').classList.remove('hidden');
-    setTimeout(()=>document.getElementById('msgInfo').classList.add('hidden'),1600);
-    alert('Informações salvas no Drive: ' + text);
-  }catch(err){
-    console.error('Erro ao salvar informações:', err);
-    alert('Falha ao salvar informações no Drive.');
-  }
+  const rec = { id: genId(), descricao, timestamp: new Date().toISOString() };
+  salvarLocal(keyFor('info'), rec);
+  document.getElementById('msgInfo').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('msgInfo').classList.add('hidden'),1600);
+  const payload = { acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' };
+  await enviarAoWebApp(payload);
 });
+
+/* ---------- helper para enviar ao WebApp ---------- */
+async function enviarAoWebApp(obj){
+  if(!WEBAPP_URL || WEBAPP_URL.includes('COLE_AQUI')) return null;
+  try{
+    const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(obj) });
+    const text = await resp.text();
+    console.log('WebApp response:', text);
+    return text;
+  }catch(err){
+    console.error('Erro ao enviar ao WebApp:', err);
+    return null;
+  }
+}
 
 /* ---------- load / init ---------- */
 function loadAllData(){
@@ -693,24 +617,17 @@ function loadAllData(){
   renderFechamentos();
   relatorios = carregarLocal(keyFor('relatorio'), []);
   renderRelatorios();
-  // carregar texto de informações do supervisor se tiver local (opcional)
-  const infoLocal = carregarLocal(keyFor('info'), { descricao: '' });
+  const infoLocal = carregarLocal(keyFor('info'), null);
   if(infoLocal && infoLocal.descricao) document.getElementById('infoDescricao').value = infoLocal.descricao;
 }
 loadAllData();
 
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElementById('modalEdit').classList.add('hidden'); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); document.querySelectorAll('[id^="menuf-"]').forEach(m=>m.classList.add('hidden')); document.querySelectorAll('[id^="menur-"]').forEach(m=>m.classList.add('hidden')); } });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElementById('modalEdit').classList.add('hidden'); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); } });
 
 /* export functions for inline handlers */
 window.abrirMenuRegistro = abrirMenuRegistro;
 window.abrirEditar = abrirEditar;
 window.excluirRegistro = excluirRegistro;
-window.abrirMenuFechamento = abrirMenuFechamento;
-window.editarFechamento = editarFechamento;
-window.excluirFechamento = excluirFechamento;
-window.abrirMenuRelatorio = abrirMenuRelatorio;
-window.editarRelatorio = editarRelatorio;
-window.excluirRelatorio = excluirRelatorio;
 </script>
 
 </body>
