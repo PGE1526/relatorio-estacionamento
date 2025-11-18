@@ -7,8 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    .watermark { position: fixed; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:5; opacity:0.06; width:60vmin; max-width:900px; filter:grayscale(100%); }
-    .watermark img{width:100%;height:auto;display:block}
     main{position:relative;z-index:10}
     .preserve{white-space:pre-wrap; word-break:break-word}
     .menu,#modalEdit{z-index:60}
@@ -17,7 +15,7 @@
     .preview-grid{display:flex; flex-wrap:wrap; gap:10px}
     .tabs-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .tabs-row { display:flex; gap:8px; padding:6px; }
-    .tabs-row button { flex: 0 0 auto; white-space:nowrap; }
+    .tabs-row button { flex:0 0 auto; white-space:nowrap; }
     @media (max-width:640px){
       .tabs-row { gap:6px; }
       .tabs-row button { padding-left:10px;padding-right:10px;}
@@ -25,8 +23,6 @@
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-
-  <div class="watermark" aria-hidden="true"><img src="logo.png" alt="Marca d'água PGE"></div>
 
   <header class="bg-white shadow-sm sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
@@ -89,12 +85,8 @@
 
     <!-- Bicicleta -->
     <section id="bicicleta" class="tabcontent hidden">
-      <div id="bicicletaCard" class="bg-white rounded shadow p-4 space-y-4 relative">
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0" aria-hidden="true">
-          <img src="logo.png" alt="" style="width:60%;opacity:0.03;filter:grayscale(100%);">
-        </div>
-
-        <div class="flex items-center justify-between relative z-10">
+      <div id="bicicletaCard" class="bg-white rounded shadow p-4 space-y-4">
+        <div class="flex items-center justify-between">
           <h2 class="font-semibold">Controle de Bicicleta</h2>
           <div class="flex items-center gap-2">
             <button id="btnCompartilhar" class="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm">Compartilhar</button>
@@ -102,21 +94,21 @@
           </div>
         </div>
 
-        <div class="overflow-x-auto relative z-10">
+        <div class="overflow-x-auto">
           <table class="table-auto w-full text-sm">
             <thead><tr class="bg-gray-100"><th class="px-3 py-2 text-left">Horário</th><th class="px-3 py-2 text-left">Preenchimento</th></tr></thead>
             <tbody id="bicicletaTable"></tbody>
           </table>
         </div>
 
-        <div class="relative z-10">
+        <div>
           <label class="block text-sm font-medium mb-1">Anotações</label>
           <textarea id="anotacoesBicicleta" rows="3" class="w-full border rounded px-3 py-2" placeholder="Ex: bicicleta foi recolhida; corrente colocada..."></textarea>
         </div>
 
-        <div class="font-semibold relative z-10">Média dos valores: <span id="mediaBicicleta">0,00</span></div>
+        <div class="font-semibold">Média dos valores: <span id="mediaBicicleta">0,00</span></div>
 
-        <div class="relative z-10 pt-2 border-t">
+        <div class="pt-2 border-t">
           <label class="block text-sm font-medium mb-1">Foto da Bicicleta</label>
           <input type="file" id="fotoBicicleta" accept="image/*" capture="environment" class="border rounded px-3 py-2 w-full">
           <div class="preview-grid mt-3" id="previewBicicleta"></div>
@@ -324,7 +316,7 @@ formVeiculos.addEventListener('submit', async (ev)=>{
   const operador = document.getElementById('operadorInput').value.trim();
   if(!validarPlaca(placa)){ placaErro.classList.remove('hidden'); placaInput.classList.add('border-red-500'); return; }
   if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
-  const novo = { id: genId(), placa, hora, motivo, operador };
+  const novo = { id: genId(), placa, hora, motivo, operador, timestamp: new Date().toISOString() };
   registrosVeiculos.push(novo);
   salvarLocal(keyFor('veiculos'), registrosVeiculos);
   renderVeiculos();
@@ -369,7 +361,7 @@ btnSaveEdit.addEventListener('click', async ()=>{
   if(!hora||!motivo||!operador){ alert('Preencha todos os campos.'); return; }
   const idx = registrosVeiculos.findIndex(x=>x.id===currentEditId);
   if(idx===-1){ modalEdit.classList.add('hidden'); return; }
-  registrosVeiculos[idx] = { id: currentEditId, placa, hora, motivo, operador };
+  registrosVeiculos[idx] = { id: currentEditId, placa, hora, motivo, operador, timestamp: new Date().toISOString() };
   salvarLocal(keyFor('veiculos'), registrosVeiculos);
   renderVeiculos();
   modalEdit.classList.add('hidden');
@@ -431,7 +423,6 @@ function conectarEventosBicicleta(){
 }
 
 document.getElementById('btnSalvarBicicleta').addEventListener('click', async ()=>{
-  // Envia os dados completos de bicicleta ao Web App
   const payload = { acao:'salvar_bicicleta', data:selectedDate, registro: bicicletaData };
   const res = await enviarAoWebApp(payload);
   if(res) { document.getElementById('msgSalvarBic').classList.remove('hidden'); setTimeout(()=>document.getElementById('msgSalvarBic').classList.add('hidden'),1200); }
@@ -460,16 +451,13 @@ function renderFechamentos(){
 formFechamento.addEventListener('submit', async (ev)=>{
   ev.preventDefault();
   const ta = document.getElementById('alteracoesTerminais');
-  const maxPx = ta.clientWidth - 8;
-  const font = window.getComputedStyle(ta).font;
   const raw = ta.value || '';
-  const wrapped = raw; // já pode enviar o texto bruto; Apps Script grava JSON
   const credencial = document.getElementById('credencialGuarita').checked;
   const chave = document.getElementById('chaveGuarita').checked;
   const horaEntrada = document.getElementById('horaFechEntrada').value;
   const horaSaida = document.getElementById('horaFechSaida').value;
   const horaPedestre = document.getElementById('horaFechPedestre').value;
-  const rec = { id: genId(), alteracoes: wrapped, credencial, chave, horaEntrada, horaSaida, horaPedestre, timestamp: new Date().toISOString() };
+  const rec = { id: genId(), alteracoes: raw, credencial, chave, horaEntrada, horaSaida, horaPedestre, timestamp: new Date().toISOString() };
   fechamentos.push(rec);
   salvarLocal(keyFor('fechamento'), fechamentos);
   renderFechamentos();
@@ -477,7 +465,6 @@ formFechamento.addEventListener('submit', async (ev)=>{
   document.getElementById('msgFech').classList.remove('hidden');
   setTimeout(()=>document.getElementById('msgFech').classList.add('hidden'),1200);
 
-  // enviar ao WebApp
   await enviarAoWebApp({ acao:'salvar_fechamento', data:selectedDate, registro: rec });
 });
 
@@ -516,7 +503,6 @@ formRelatorio.addEventListener('submit', async (ev)=>{
   document.getElementById('msgRel').classList.remove('hidden');
   setTimeout(()=>document.getElementById('msgRel').classList.add('hidden'),1200);
 
-  // enviar ao WebApp
   await enviarAoWebApp({ acao:'salvar_relatorio', data:selectedDate, registro: rec });
 });
 
@@ -528,7 +514,6 @@ function setupPhotoUpload(inputId, previewContainerId, sectionLabel, extraDataFn
   input.addEventListener('change', async ()=>{
     const file = input.files && input.files[0];
     if(!file) return;
-    // reduz imagem se muito grande (opcional): converte para JPEG com qualidade 0.8 para economizar banda
     const reader = new FileReader();
     reader.onload = async (e)=>{
       const dataUrl = e.target.result;
@@ -543,10 +528,6 @@ function setupPhotoUpload(inputId, previewContainerId, sectionLabel, extraDataFn
         secao: sectionLabel,
         meta: extraDataFn ? extraDataFn() : {}
       };
-      if(!WEBAPP_URL || WEBAPP_URL.includes("COLE_AQUI")) {
-        alert("Configure a URL do Web App (WEBAPP_URL) antes de enviar.");
-        return;
-      }
       try{
         const resp = await fetch(WEBAPP_URL, {
           method: "POST",
@@ -589,8 +570,7 @@ document.getElementById('btnSalvarInfo').addEventListener('click', async ()=>{
   salvarLocal(keyFor('info'), rec);
   document.getElementById('msgInfo').classList.remove('hidden');
   setTimeout(()=>document.getElementById('msgInfo').classList.add('hidden'),1600);
-  const payload = { acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' };
-  await enviarAoWebApp(payload);
+  await enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' });
 });
 
 /* ---------- helper para enviar ao WebApp ---------- */
