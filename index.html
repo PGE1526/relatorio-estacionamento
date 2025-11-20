@@ -5,7 +5,6 @@
   <title>Relatório diário PGE</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     main{position:relative;z-index:10}
     .preserve{white-space:pre-wrap; word-break:break-word}
@@ -15,8 +14,9 @@
     .preview-grid{display:flex; flex-wrap:wrap; gap:10px}
     .tabs-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .tabs-row { display:flex; gap:8px; padding:6px; }
-    .tabs-row button { flex: 0 0 auto; white-space:nowrap; cursor:pointer; }
-    .hidden{display:none}
+    .tabs-row button { flex: 0 0 auto; white-space:nowrap; }
+    #supervisorAlert { display:none; position: fixed; right: 16px; bottom: 16px; z-index: 70; background: #f97316; color: #fff; padding: 12px 16px; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    #infoList { max-height:240px; overflow:auto; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -25,12 +25,12 @@
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
       <div>
         <h1 class="text-lg font-bold">Relatório diário PGE</h1>
-        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento P4, Relatório do operador, Informações do supervisor</p>
+        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações supervisor</p>
       </div>
       <div class="flex items-center gap-2">
-        <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Dia anterior" type="button">◀</button>
+        <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Dia anterior">◀</button>
         <input id="datePicker" type="date" class="border rounded px-3 py-2 bg-white" />
-        <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Próximo dia" type="button">▶</button>
+        <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Próximo dia">▶</button>
       </div>
     </div>
   </header>
@@ -40,12 +40,11 @@
     <nav class="bg-white rounded shadow p-0">
       <div class="tabs-scroll" id="tabsScroll">
         <div class="tabs-row" role="tablist" aria-label="Navegação principal">
-          <!-- Ordem correta conforme pedido -->
-          <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold" role="tab" type="button">Veículos</button>
-          <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Bicicleta</button>
-          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Fechamento P4</button>
-          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Relatório do operador</button>
-          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab" type="button">Informações do supervisor</button>
+          <button id="tabVeiculosBtn" class="tablink px-4 py-2 rounded bg-blue-600 text-white font-semibold" role="tab">Veículos</button>
+          <button id="tabBicicletaBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Bicicleta</button>
+          <button id="tabFechamentoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Fechamento</button>
+          <button id="tabRelatorioBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Relatório</button>
+          <button id="tabInfoBtn" class="tablink px-4 py-2 rounded bg-white text-gray-700 border" role="tab">Informações</button>
         </div>
       </div>
     </nav>
@@ -58,13 +57,7 @@
           <form id="formVeiculos" class="space-y-3" novalidate>
             <div>
               <label class="block text-sm font-medium mb-1">Placa</label>
-              <!-- datalist para manter opções de placa + permitir digitar -->
-              <input list="placasList" type="text" id="placaInput" maxlength="8" class="w-full border rounded px-3 py-2" placeholder="ABC-1234" autocomplete="off" />
-              <datalist id="placasList">
-                <option value="ABC-1234"></option>
-                <option value="DEF-5678"></option>
-                <option value="GHI-9012"></option>
-              </datalist>
+              <input type="text" id="placaInput" maxlength="8" class="w-full border rounded px-3 py-2" placeholder="ABC-1234" autocomplete="off">
               <p id="placaErro" class="hidden text-sm text-red-600 mt-1">Placa inválida.</p>
             </div>
             <div><label class="block text-sm font-medium mb-1">Hora</label><input type="time" id="horaInput" class="w-full border rounded px-3 py-2"></div>
@@ -128,7 +121,7 @@
     <!-- Fechamento -->
     <section id="fechamento" class="tabcontent hidden" aria-labelledby="tabFechamentoBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
-        <h2 class="font-semibold">Fechamento P4</h2>
+        <h2 class="font-semibold">Fechamento da P4</h2>
         <form id="formFechamento" class="space-y-3" novalidate>
           <div><label class="block text-sm font-medium mb-1">Alterações nos terminais</label><textarea id="alteracoesTerminais" rows="4" class="w-full border rounded px-3 py-2" placeholder="Descreva alterações..."></textarea></div>
           <div class="flex gap-6"><label class="inline-flex items-center gap-2"><input type="checkbox" id="credencialGuarita"> Credencial está na guarita</label><label class="inline-flex items-center gap-2"><input type="checkbox" id="chaveGuarita"> Chave está na guarita</label></div>
@@ -153,7 +146,7 @@
     <!-- Relatório -->
     <section id="relatorio" class="tabcontent hidden" aria-labelledby="tabRelatorioBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
-        <h2 class="font-semibold">Relatório do operador</h2>
+        <h2 class="font-semibold">Relatório diário operador</h2>
         <form id="formRelatorio" class="space-y-3" novalidate>
           <div><label class="block text-sm font medium mb-1">Nome</label><input type="text" id="relNome" class="w-full border rounded px-3 py-2"></div>
           <div><label class="block text-sm font-medium mb-1">Data</label><input type="date" id="relData" class="w-full border rounded px-3 py-2"></div>
@@ -175,18 +168,12 @@
     <!-- Informações supervisor -->
     <section id="info" class="tabcontent hidden" aria-labelledby="tabInfoBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
-        <h2 class="font-semibold">Informações do supervisor</h2>
-        <p class="text-sm text-gray-600">Adicione fotos gerais do dia e observações do supervisor. Clique em Salvar Informações para gravar no Drive.</p>
-
-        <div>
-          <label class="block text-sm font-medium mb-1">Foto</label>
-          <input type="file" id="fotoInfo" accept="image/*" capture="environment" class="border rounded px-3 py-2 w-full">
-          <div class="preview-grid mt-3" id="previewInfo"></div>
-        </div>
+        <h2 class="font-semibold">Informações supervisor</h2>
+        <p class="text-sm text-gray-600">Adicione observações do supervisor. Todas as informações adicionadas ficam visíveis a todos em tempo real. Quando novo registro for adicionado, um alerta aparece para todos os usuários conectados.</p>
 
         <div>
           <label class="block text-sm font-medium mb-1">Descrição do supervisor</label>
-          <textarea id="infoDescricao" rows="4" class="w-full border rounded px-3 py-2" placeholder="Observações do supervisor..."></textarea>
+          <textarea id="infoDescricao" rows="3" class="w-full border rounded px-3 py-2" placeholder="Observações do supervisor..."></textarea>
         </div>
 
         <div class="flex gap-3">
@@ -194,11 +181,13 @@
           <span id="msgInfo" class="text-sm text-green-700 hidden">Informações salvas.</span>
         </div>
 
-        <div id="listaInfo" class="mt-3 space-y-3"></div>
+        <div id="infoList" class="mt-3 space-y-3"></div>
       </div>
     </section>
 
   </main>
+
+  <div id="supervisorAlert">Nova informação do supervisor — confira a aba Informações</div>
 
   <!-- Modal edição veículo -->
   <div id="modalEdit" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
@@ -209,14 +198,14 @@
         <div><label class="block text-sm font-medium mb-1">Hora</label><input id="editHora" type="time" class="w-full border rounded px-3 py-2"></div>
         <div><label class="block text-sm font-medium mb-1">Motivo</label><input id="editMotivo" class="w-full border rounded px-3 py-2"></div>
         <div><label class="block text-sm font-medium mb-1">Operador</label><input id="editOperador" class="w-full border rounded px-3 py-2"></div>
-        <div class="flex justify-end gap-3 mt-2"><button id="btnCancelEdit" class="px-4 py-2 rounded border" type="button">Cancelar</button><button id="btnSaveEdit" class="px-4 py-2 rounded bg-blue-600 text-white" type="button">Salvar</button></div>
+        <div class="flex justify-end gap-3 mt-2"><button id="btnCancelEdit" class="px-4 py-2 rounded border">Cancelar</button><button id="btnSaveEdit" class="px-4 py-2 rounded bg-blue-600 text-white">Salvar</button></div>
       </div>
     </div>
   </div>
 
 <script>
 /* ---------- CONFIG: sua URL do Web App (ATUALIZADA) ---------- */
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycby2Ftp5u1u6nJ5AJdy7gWuzEK7inZvSTT3Tx1IPAVY4tMI9BJpneFHEiAt0l20_eiGv/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxGNMD5i3f4kMQrdI5XXWIlBscRkLHqE8U33MVRUNkqbCl5mhy01ycSAgWFxutlVdm9/exec";
 
 /* ---------- utilitários e estado ---------- */
 let selectedDate = new Date().toISOString().slice(0,10);
@@ -266,7 +255,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     Object.values(tabContents).forEach(c=>c.classList.add('hidden'));
     tabContents[name].classList.remove('hidden');
     if(evt&&evt.currentTarget) setActiveTabButton(evt.currentTarget);
-    try{ if(evt && evt.currentTarget) evt.currentTarget.scrollIntoView({inline:'center', behavior:'smooth'}); }catch(e){}
+    try{ evt.currentTarget.scrollIntoView({inline:'center', behavior:'smooth'}); }catch(e){}
   }
   tabs.veiculosBtn.addEventListener('click', e=>openTab(e,'veiculos'));
   tabs.bicicletaBtn.addEventListener('click', e=>openTab(e,'bicicleta'));
@@ -333,10 +322,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
         <td class="border px-3 py-2 text-sm">${escapeHTML(r.operador)}</td>
         <td class="border px-3 py-2 text-center">
           <div class="relative inline-block">
-            <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100 dots-btn" data-id="${r.id}" aria-label="Abrir opções" type="button">⋮</button>
+            <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100 dots-btn" data-id="${r.id}" aria-label="Abrir opções">⋮</button>
             <div id="menu-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 edit-btn" data-id="${r.id}" type="button">Editar</button>
-              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600 del-btn" data-id="${r.id}" type="button">Excluir</button>
+              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 edit-btn" data-id="${r.id}">Editar</button>
+              <button class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600 del-btn" data-id="${r.id}">Excluir</button>
             </div>
           </div>
         </td>`;
@@ -516,10 +505,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
             <div class="text-sm mt-1">Horas: ${r.horaEntrada||''} / ${r.horaSaida||''} / ${r.horaPedestre||''}</div>
           </div>
           <div class="relative inline-block">
-            <button class="dots-fechamento text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" type="button">⋮</button>
+            <button class="dots-fechamento text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}">⋮</button>
             <div id="menu-fech-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-              <button class="block w-full text-left px-3 py-2 edit-fech" data-id="${r.id}" type="button">Editar</button>
-              <button class="block w-full text-left px-3 py-2 text-red-600 del-fech" data-id="${r.id}" type="button">Excluir</button>
+              <button class="block w-full text-left px-3 py-2 edit-fech" data-id="${r.id}">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-fech" data-id="${r.id}">Excluir</button>
             </div>
           </div>
         </div>`;
@@ -561,28 +550,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(resp && resp.ok) showTemp('msgFech');
   });
 
-  function editarFechamento(id){
-    const rec = fechamentos.find(x=>x.id===id);
-    if(!rec) return;
-    document.getElementById('alteracoesTerminais').value = rec.alteracoes || '';
-    document.getElementById('credencialGuarita').checked = !!rec.credencial;
-    document.getElementById('chaveGuarita').checked = !!rec.chave;
-    document.getElementById('horaFechEntrada').value = rec.horaEntrada || '';
-    document.getElementById('horaFechSaida').value = rec.horaSaida || '';
-    document.getElementById('horaFechPedestre').value = rec.horaPedestre || '';
-    fechamentos = fechamentos.filter(x=>x.id!==id);
-    salvarLocal(keyFor('fechamento'), fechamentos);
-    renderFechamentos();
-  }
-
-  function excluirFechamento(id){
-    if(!confirm('Excluir este fechamento?')) return;
-    fechamentos = fechamentos.filter(x=>x.id!==id);
-    salvarLocal(keyFor('fechamento'), fechamentos);
-    renderFechamentos();
-    enviarAoWebApp({ acao:'excluir_fechamento', data:selectedDate, id });
-  }
-
   /* ---------- RELATÓRIO ---------- */
   const formRelatorio = document.getElementById('formRelatorio');
   const listaRelatorios = document.getElementById('listaRelatorios');
@@ -601,10 +568,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
             <div class="text-sm preserve mt-1">${escapeHTML(r.info||'')}</div>
           </div>
           <div class="relative inline-block">
-            <button class="dots-rel text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" type="button">⋮</button>
+            <button class="dots-rel text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}">⋮</button>
             <div id="menu-rel-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-              <button class="block w-full text-left px-3 py-2 edit-rel" data-id="${r.id}" type="button">Editar</button>
-              <button class="block w-full text-left px-3 py-2 text-red-600 del-rel" data-id="${r.id}" type="button">Excluir</button>
+              <button class="block w-full text-left px-3 py-2 edit-rel" data-id="${r.id}">Editar</button>
+              <button class="block w-full text-left px-3 py-2 text-red-600 del-rel" data-id="${r.id}">Excluir</button>
             </div>
           </div>
         </div>`;
@@ -665,74 +632,83 @@ document.addEventListener('DOMContentLoaded', ()=>{
     enviarAoWebApp({ acao:'excluir_relatorio', data:selectedDate, id });
   }
 
-  /* ---------- INFORMAÇÕES supervisor ---------- */
+  /* ---------- INFORMAÇÕES supervisor (NOVO: apenas informações; leitura em tempo real) ---------- */
   const btnSalvarInfo = document.getElementById('btnSalvarInfo');
-  const listaInfo = document.getElementById('listaInfo');
-  let infos = [];
+  const infoList = document.getElementById('infoList');
+  let infos = []; // lista local cache
+  let lastInfoTimestamp = null;
 
   function renderInfos(){
-    listaInfo.innerHTML='';
-    if(!infos.length){ listaInfo.innerHTML='<p class="text-sm text-gray-600">Nenhuma informação salva.</p>'; return; }
-    infos.forEach(r=>{
+    infoList.innerHTML = '';
+    if(!infos.length){
+      infoList.innerHTML = '<p class="text-sm text-gray-600">Nenhuma informação salva.</p>';
+      return;
+    }
+    infos.slice().reverse().forEach(r=>{
       const div=document.createElement('div'); div.className='border rounded p-3 mb-3 relative bg-gray-50';
-      div.innerHTML = `
-        <div class="flex justify-between items-start">
-          <div><div class="text-sm preserve">${escapeHTML(r.descricao||'')}</div><div class="text-xs text-gray-500 mt-1">${r.timestamp||''}</div></div>
-          <div class="relative inline-block">
-            <button class="dots-info text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}" type="button">⋮</button>
-            <div id="menu-info-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-              <button class="block w-full text-left px-3 py-2 edit-info" data-id="${r.id}" type="button">Editar</button>
-              <button class="block w-full text-left px-3 py-2 text-red-600 del-info" data-id="${r.id}" type="button">Excluir</button>
-            </div>
-          </div>
-        </div>`;
-      listaInfo.appendChild(div);
+      div.innerHTML = `<div class="text-sm preserve">${escapeHTML(r.descricao||'')}</div><div class="text-xs text-gray-500 mt-2">${escapeHTML(r.timestamp||'')}</div>`;
+      infoList.appendChild(div);
     });
   }
 
-  listaInfo.addEventListener('click',(e)=>{
-    const btn = e.target.closest('.dots-info');
-    if(btn){
-      const id = btn.dataset.id;
-      document.querySelectorAll('[id^="menu-info-"]').forEach(m=>m.classList.add('hidden'));
-      const menu = document.getElementById(`menu-info-${id}`);
-      if(menu) menu.classList.toggle('hidden');
-      return;
+  async function carregarInfosDoServidor(){
+    try{
+      const resp = await fetch(WEBAPP_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=UTF-8' }, body: JSON.stringify({ acao:'listar_informacoes', data:selectedDate }) });
+      const text = await resp.text();
+      if(!resp.ok){ console.warn('listar_informacoes erro', resp.status, text); return; }
+      let json;
+      try{ json = JSON.parse(text); }catch(e){ console.warn('listar_informacoes parse fail', e, text); return; }
+      if(Array.isArray(json.infos)){
+        // checa novo
+        const serverInfos = json.infos;
+        if(serverInfos.length && (!lastInfoTimestamp || serverInfos[serverInfos.length-1].timestamp !== lastInfoTimestamp)){
+          infos = serverInfos;
+          lastInfoTimestamp = serverInfos[serverInfos.length-1].timestamp;
+          renderInfos();
+          // exibe alerta visível
+          showSupervisorAlert();
+        } else {
+          // sem novidade, mas ainda atualiza local caso array vazio
+          infos = serverInfos;
+          renderInfos();
+        }
+      }
+    }catch(err){
+      console.error('Erro carregarInfosDoServidor', err);
     }
-    const edit = e.target.closest('.edit-info');
-    if(edit){ editarInfo(edit.dataset.id); return; }
-    const del = e.target.closest('.del-info');
-    if(del){ excluirInfo(del.dataset.id); return; }
-  });
+  }
+
+  // checagem periódica a cada 5s para "quase em tempo real"
+  setInterval(carregarInfosDoServidor, 5000);
+  // chamada inicial
+  setTimeout(carregarInfosDoServidor, 800);
 
   btnSalvarInfo.addEventListener('click', async ()=>{
     const descricao = document.getElementById('infoDescricao').value.trim();
     if(!descricao){ alert('Escreva algo antes de salvar.'); return; }
     const rec = { id: genId(), descricao, timestamp: new Date().toISOString() };
-    infos.push(rec);
-    salvarLocal(keyFor('info'), infos);
-    renderInfos();
-    document.getElementById('infoDescricao').value = '';
-
+    // envia ao servidor
     const resp = await enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' });
-    if(resp && resp.ok) showTemp('msgInfo');
+    if(resp && resp.ok){
+      showTemp('msgInfo');
+      document.getElementById('infoDescricao').value = '';
+      // atualizar cache local imediatamente (melhora UX antes do polling)
+      infos.push(rec);
+      lastInfoTimestamp = rec.timestamp;
+      renderInfos();
+      showSupervisorAlert();
+    } else {
+      alert('Erro ao salvar no servidor.');
+    }
   });
 
-  function editarInfo(id){
-    const r = infos.find(x=>x.id===id);
-    if(!r) return;
-    document.getElementById('infoDescricao').value = r.descricao || '';
-    infos = infos.filter(x=>x.id!==id);
-    salvarLocal(keyFor('info'), infos);
-    renderInfos();
-  }
-
-  function excluirInfo(id){
-    if(!confirm('Excluir esta informação?')) return;
-    infos = infos.filter(x=>x.id!==id);
-    salvarLocal(keyFor('info'), infos);
-    renderInfos();
-    enviarAoWebApp({ acao:'excluir_informacoes', data:selectedDate, id });
+  function showSupervisorAlert(){
+    const el = document.getElementById('supervisorAlert');
+    if(!el) return;
+    el.style.display='block';
+    el.style.opacity='1';
+    // mantém visível por 6s
+    setTimeout(()=>{ el.style.transition='opacity 400ms'; el.style.opacity='0'; setTimeout(()=>el.style.display='none',420); }, 6000);
   }
 
   /* ---------- Upload de fotos: preview + envio ao Apps Script (text/plain) ---------- */
@@ -803,8 +779,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     renderRelatorios();
     infos = carregarLocal(keyFor('info'), []);
     renderInfos();
-    const infoLocal = carregarLocal(keyFor('info'), null);
-    if(infoLocal && infoLocal.descricao) document.getElementById('infoDescricao').value = infoLocal.descricao;
     const relDataEl=document.getElementById('relData'); if(relDataEl) relDataEl.value = selectedDate;
   }
   loadAllData();
