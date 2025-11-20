@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
@@ -86,7 +86,7 @@
         <div class="flex items-center justify-between">
           <h2 class="font-semibold">Controle de Bicicleta</h2>
           <div class="flex items-center gap-2">
-            <button id="btnCompartilhar" class="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm">Compartilhar</button>
+            
             <span id="msgBic" class="text-sm text-green-700 hidden">Salvo.</span>
           </div>
         </div>
@@ -112,7 +112,7 @@
         </div>
 
         <div class="flex gap-2">
-          <button id="btnSalvarBicicleta" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar Bicicleta no Drive</button>
+          
           <span id="msgSalvarBic" class="text-sm text-green-700 hidden">Enviado ao Drive.</span>
         </div>
       </div>
@@ -205,7 +205,7 @@
 
 <script>
 /* ---------- CONFIG: sua URL do Web App (ATUALIZADA) ---------- */
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxGNMD5i3f4kMQrdI5XXWIlBscRkLHqE8U33MVRUNkqbCl5mhy01ycSAgWFxutlVdm9/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwuHUcuMWYaT1lM-biD5Ao9ydznXzkjPqcY4QlLFe-5loojSZBexHn3Cs-w2im9qchf/exec";
 
 /* ---------- utilitários e estado ---------- */
 let selectedDate = new Date().toISOString().slice(0,10);
@@ -291,6 +291,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   }
 
+
+  /* ---------- util: debounce para evitar muitas chamadas ao servidor ---------- */
+  function debounce(fn, wait){ let t; return function(...a){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,a), wait); }; }
   /* ---------- VEÍCULOS (CRUD + UI) ---------- */
   const placaInput = document.getElementById('placaInput');
   const placaErro = document.getElementById('placaErro');
@@ -441,52 +444,43 @@ document.addEventListener('DOMContentLoaded', ()=>{
     calcularMedia();
   }
 
-  function conectarEventosBicicleta(){
+  // salva bicicleta no servidor, mas com debounce para evitar chamadas excessivas
+  const debouncedSalvarBicicleta = debounce(async ()=>{
+    try{ await enviarAoWebApp({ acao:\'salvar_bicicleta\', data:selectedDate, registro: bicicletaData }); }catch(e){ console.error("Erro ao salvar bicicleta (debounced)", e); }
+  }, 900);
+
+  function conectarEventosBicicleta() {
+
     document.querySelectorAll('.bicicletaInput').forEach(inp=>{
       inp.addEventListener('input', ()=>{
         const idx = Number(inp.dataset.index);
         bicicletaData.valores[idx] = inp.value;
         salvarLocal(keyFor('bicicleta'), bicicletaData);
         calcularMedia();
+        // salvar automaticamente (debounced)
+        debouncedSalvarBicicleta();
       });
       inp.addEventListener('blur', ()=>{
         const idx = Number(inp.dataset.index);
         bicicletaData.valores[idx] = inp.value;
         salvarLocal(keyFor('bicicleta'), bicicletaData);
         calcularMedia();
+        debouncedSalvarBicicleta();
       });
     });
+    anotacoesEl.removeEventListener && anotacoesEl.removeEventListener('input', ()=>{}); // safe remove
     anotacoesEl.addEventListener('input', ()=>{
       bicicletaData.anotacoes = anotacoesEl.value;
       salvarLocal(keyFor('bicicleta'), bicicletaData);
       showTemp('msgBic');
+      debouncedSalvarBicicleta();
     });
-  }
+    }
 
   function parseNumero(v){ if((v === '' || v === null || v===undefined) && v!==0) return 0; const s=String(v).trim().replace(',','.'); const n=parseFloat(s); return isNaN(n)?0:n; }
   function calcularMedia(){ const soma = bicicletaData.valores.reduce((acc,cur)=>acc+parseNumero(cur),0); const media = soma/12; mediaEl.textContent = media.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
-  document.getElementById('btnCompartilhar').addEventListener('click', async ()=>{
-    try{
-      const el=document.getElementById('bicicletaCard');
-      await Promise.all(Array.from(el.querySelectorAll('img')).map(img=> img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r})));
-      const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
-      const blob = await new Promise(r=>canvas.toBlob(r,'image/png'));
-      const fileName = `bicicleta_${selectedDate}_${new Date().toISOString().slice(11,19).replace(/:/g,'-')}.png`;
-      if(navigator.canShare && navigator.canShare({files:[new File([blob],fileName,{type:'image/png'})]})){
-        try{ await navigator.share({files:[new File([blob],fileName,{type:'image/png'})], title:'Controle de Bicicleta', text:`Registro ${selectedDate}`}); return; }catch(err){}
-      }
-      const url=URL.createObjectURL(blob); window.open(url,'_blank');
-    }catch(err){ alert('Erro ao gerar compartilhamento.'); console.error(err); }
-  });
-
-  document.getElementById('btnSalvarBicicleta').addEventListener('click', async ()=>{
-    const payload = { acao:'salvar_bicicleta', data:selectedDate, registro: bicicletaData };
-    const resp = await enviarAoWebApp(payload);
-    if(resp && resp.ok) showTemp('msgSalvarBic');
-  });
-
-  /* ---------- FECHAMENTO ---------- */
+      /* ---------- FECHAMENTO ---------- */
   const formFechamento = document.getElementById('formFechamento');
   const listaFechamentos = document.getElementById('listaFechamentos');
   let fechamentos = [];
