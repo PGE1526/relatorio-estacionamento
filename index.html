@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   /* ---------- Função para enviar ao Web App (text/plain to avoid preflight) ---------- */
   async function enviarAoWebApp(obj){
-    if(!WEBAPP_URL || WEBAPP_URL.includes('COLE_AQUI')) {
+    if(!WEBAPP_URL || WEBAPP_URL.includes('https://script.google.com/macros/s/AKfycbxGNMD5i3f4kMQrdl5XXWIlBscRkLHqE8U33MVRUNkqbCl5mhy01ycSAgWFxutlVdm9/exec')) {
       console.warn('WEBAPP_URL não configurada');
       return null;
     }
