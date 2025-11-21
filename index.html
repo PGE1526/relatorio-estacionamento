@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
@@ -205,36 +204,8 @@
   </div>
 
 <script>
-/* ---------- CONFIG: URLs do Web App (primary + backup) ---------- */
-const WEBAPP_URLS = [
-  "https://script.google.com/macros/s/AKfycbwuHUcuMWYaT1lM-biD5Ao9ydznXzkjPqcY4QlLFe-5loojSZBexHn3Cs-w2im9qchf/exec",
-  "https://script.google.com/macros/s/AKfycby_3ak6WWQmqzxV9HY1OPcDEd_EbdRTCP9eIufB9ckqLBbx9bN-lRtnf8WpDhC-IDNq/exec"
-];
-
-async function enviarAoWebApp(payload){
-  let lastError = null;
-  for(const url of WEBAPP_URLS){
-    try{
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-        body: JSON.stringify(payload)
-      });
-      const text = await resp.text();
-      if(!resp.ok){
-        lastError = new Error('HTTP ' + resp.status + ' - ' + text);
-        console.warn('WebApp non-ok', url, resp.status, text);
-        continue;
-      }
-      try{ return JSON.parse(text); }catch(e){ return { ok:true, text }; }
-    }catch(err){
-      lastError = err;
-      console.warn('Erro ao acessar', url, err);
-    }
-  }
-  return { ok:false, error: lastError ? String(lastError) : 'Nenhuma URL respondeu' };
-}
- (ATUALIZADA) ---------- */
+/* ---------- CONFIG: sua URL do Web App (ATUALIZADA) ---------- */
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwuHUcuMWYaT1lM-biD5Ao9ydznXzkjPqcY4QlLFe-5loojSZBexHn3Cs-w2im9qchf/exec";
 
 /* ---------- utilitários e estado ---------- */
 let selectedDate = new Date().toISOString().slice(0,10);
@@ -245,7 +216,7 @@ function keyFor(kind, date = selectedDate){ return `${kind}_${date}`; }
 function salvarLocal(chave, obj){ localStorage.setItem(chave, JSON.stringify(obj)); }
 function carregarLocal(chave, padrao){ const raw = localStorage.getItem(chave); return raw ? JSON.parse(raw) : padrao; }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function escapeHTML(str=''){ return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'<','>':'>','"':'&quot;',"'":'&#39;'}[m])); }
+function escapeHTML(str=''){ return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 /* ---------- inicialização após DOM pronto ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
