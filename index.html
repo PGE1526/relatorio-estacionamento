@@ -25,7 +25,7 @@
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
       <div>
         <h1 class="text-lg font-bold">Relatório diário PGE</h1>
-        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações</p>
+        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações supervisor</p>
       </div>
       <div class="flex items-center gap-2">
         <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Dia anterior">◀</button>
@@ -86,6 +86,7 @@
         <div class="flex items-center justify-between">
           <h2 class="font-semibold">Controle de Bicicleta</h2>
           <div class="flex items-center gap-2">
+            
             <span id="msgBic" class="text-sm text-green-700 hidden">Salvo.</span>
           </div>
         </div>
@@ -111,7 +112,7 @@
         </div>
 
         <div class="flex gap-2">
-          <button id="btnSalvarBicicleta" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar Bicicleta no Drive</button>
+          
           <span id="msgSalvarBic" class="text-sm text-green-700 hidden">Enviado ao Drive.</span>
         </div>
       </div>
@@ -133,30 +134,6 @@
         </form>
 
         <div class="mt-2"><h3 class="font-medium mb-2">Fechamentos do dia</h3><div id="listaFechamentos" class="space-y-3"></div></div>
-
-        <div class="pt-2 border-t">
-          <label class="block text-sm font-medium mb-1">Foto do Fechamento</label>
-          <input type="file" id="fotoFechamento" accept="image/*" capture="environment" class="border rounded px-3 py-2 w-full">
-          <div class="preview-grid mt-3" id="previewFechamento"></div>
-        </div>
-      </div>
-    </section>
-
-<section id="fechamentoP3" class="tabcontent hidden" aria-labelledby="tabFechamentoBtn">
-      <div class="bg-white rounded shadow p-4 space-y-4">
-        <h2 class="font-semibold">Fechamento da P3</h2>
-        <form id="formFechamentoP3" class="space-y-3" novalidate>
-          <div><label class="block text-sm font-medium mb-1">Alterações nos terminais</label><textarea id="alteracoesTerminaisP3" rows="4" class="w-full border rounded px-3 py-2" placeholder="Descreva alterações..."></textarea></div>
-          <div class="flex gap-6"><label class="inline-flex items-center gap-2"><input type="checkbox" id="credencialGuaritaP3"> Credencial está na guarita</label><label class="inline-flex items-center gap-2"><input type="checkbox" id="chaveGuaritaP3"> Chave está na guarita</label></div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div><label class="block text-sm font-medium mb-1">Horário fechamento entrada</label><input type="time" id="horaFechEntradaP3" class="w-full border rounded px-3 py-2"></div>
-            <div><label class="block text-sm font-medium mb-1">Horário fechamento saída</label><input type="time" id="horaFechSaidaP3" class="w-full border rounded px-3 py-2"></div>
-            <div><label class="block text-sm font-medium mb-1">Horário fechamento pedestre</label><input type="time" id="horaFechPedestreP3" class="w-full border rounded px-3 py-2"></div>
-          </div>
-          <div class="flex items-center gap-3"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Salvar Fechamento</button><span id="msgFechP3" class="text-sm text-green-700 hidden">Salvo.</span></div>
-        </form>
-
-        <div class="mt-2"><h3 class="font-medium mb-2">Fechamentos do dia</h3><div id="listaFechamentosP3" class="space-y-3"></div></div>
 
         <div class="pt-2 border-t">
           <label class="block text-sm font-medium mb-1">Foto do Fechamento</label>
@@ -188,10 +165,10 @@
       </div>
     </section>
 
-    <!-- Informações -->
+    <!-- Informações supervisor -->
     <section id="info" class="tabcontent hidden" aria-labelledby="tabInfoBtn">
       <div class="bg-white rounded shadow p-4 space-y-4">
-        <h2 class="font-semibold">Informações</h2>
+        <h2 class="font-semibold">Informações supervisor</h2>
         <p class="text-sm text-gray-600"></p>
 
         <div>
@@ -228,7 +205,7 @@
 
 <script>
 /* ---------- CONFIG: sua URL do Web App (ATUALIZADA) ---------- */
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxGNMD5i3f4kMQrdI5XXWIlBscRkLHqE8U33MVRUNkqbCl5mhy01ycSAgWFxutlVdm9/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwuHUcuMWYaT1lM-biD5Ao9ydznXzkjPqcY4QlLFe-5loojSZBexHn3Cs-w2im9qchf/exec";
 
 /* ---------- utilitários e estado ---------- */
 let selectedDate = new Date().toISOString().slice(0,10);
@@ -314,6 +291,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   }
 
+
+  /* ---------- util: debounce para evitar muitas chamadas ao servidor ---------- */
+  function debounce(fn, wait){ let t; return function(...a){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,a), wait); }; }
   /* ---------- VEÍCULOS (CRUD + UI) ---------- */
   const placaInput = document.getElementById('placaInput');
   const placaErro = document.getElementById('placaErro');
@@ -464,52 +444,43 @@ document.addEventListener('DOMContentLoaded', ()=>{
     calcularMedia();
   }
 
-  function conectarEventosBicicleta(){
+  // salva bicicleta no servidor, mas com debounce para evitar chamadas excessivas
+  const debouncedSalvarBicicleta = debounce(async ()=>{
+    try{ await enviarAoWebApp({ acao:\'salvar_bicicleta\', data:selectedDate, registro: bicicletaData }); }catch(e){ console.error("Erro ao salvar bicicleta (debounced)", e); }
+  }, 900);
+
+  function conectarEventosBicicleta() {
+
     document.querySelectorAll('.bicicletaInput').forEach(inp=>{
       inp.addEventListener('input', ()=>{
         const idx = Number(inp.dataset.index);
         bicicletaData.valores[idx] = inp.value;
         salvarLocal(keyFor('bicicleta'), bicicletaData);
         calcularMedia();
+        // salvar automaticamente (debounced)
+        debouncedSalvarBicicleta();
       });
       inp.addEventListener('blur', ()=>{
         const idx = Number(inp.dataset.index);
         bicicletaData.valores[idx] = inp.value;
         salvarLocal(keyFor('bicicleta'), bicicletaData);
         calcularMedia();
+        debouncedSalvarBicicleta();
       });
     });
+    anotacoesEl.removeEventListener && anotacoesEl.removeEventListener('input', ()=>{}); // safe remove
     anotacoesEl.addEventListener('input', ()=>{
       bicicletaData.anotacoes = anotacoesEl.value;
       salvarLocal(keyFor('bicicleta'), bicicletaData);
       showTemp('msgBic');
+      debouncedSalvarBicicleta();
     });
-  }
+    }
 
   function parseNumero(v){ if((v === '' || v === null || v===undefined) && v!==0) return 0; const s=String(v).trim().replace(',','.'); const n=parseFloat(s); return isNaN(n)?0:n; }
   function calcularMedia(){ const soma = bicicletaData.valores.reduce((acc,cur)=>acc+parseNumero(cur),0); const media = soma/12; mediaEl.textContent = media.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
-  document.getElementById('btnCompartilhar').addEventListener('click', async ()=>{
-    try{
-      const el=document.getElementById('bicicletaCard');
-      await Promise.all(Array.from(el.querySelectorAll('img')).map(img=> img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r})));
-      const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
-      const blob = await new Promise(r=>canvas.toBlob(r,'image/png'));
-      const fileName = `bicicleta_${selectedDate}_${new Date().toISOString().slice(11,19).replace(/:/g,'-')}.png`;
-      if(navigator.canShare && navigator.canShare({files:[new File([blob],fileName,{type:'image/png'})]})){
-        try{ await navigator.share({files:[new File([blob],fileName,{type:'image/png'})], title:'Controle de Bicicleta', text:`Registro ${selectedDate}`}); return; }catch(err){}
-      }
-      const url=URL.createObjectURL(blob); window.open(url,'_blank');
-    }catch(err){ alert('Erro ao gerar compartilhamento.'); console.error(err); }
-  });
-
-  document.getElementById('btnSalvarBicicleta').addEventListener('click', async ()=>{
-    const payload = { acao:'salvar_bicicleta', data:selectedDate, registro: bicicletaData };
-    const resp = await enviarAoWebApp(payload);
-    if(resp && resp.ok) showTemp('msgSalvarBic');
-  });
-
-  /* ---------- FECHAMENTO ---------- */
+      /* ---------- FECHAMENTO ---------- */
   const formFechamento = document.getElementById('formFechamento');
   const listaFechamentos = document.getElementById('listaFechamentos');
   let fechamentos = [];
@@ -689,7 +660,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
           lastInfoTimestamp = serverInfos[serverInfos.length-1].timestamp;
           renderInfos();
           // exibe alerta visível
-          showInformaçãoAlert();
+          showSupervisorAlert();
         } else {
           // sem novidade, mas ainda atualiza local caso array vazio
           infos = serverInfos;
@@ -711,7 +682,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(!descricao){ alert('Escreva algo antes de salvar.'); return; }
     const rec = { id: genId(), descricao, timestamp: new Date().toISOString() };
     // envia ao servidor
-    const resp = await enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes' });
+    const resp = await enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: rec, secao:'informacoes_supervisor' });
     if(resp && resp.ok){
       showTemp('msgInfo');
       document.getElementById('infoDescricao').value = '';
@@ -719,13 +690,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
       infos.push(rec);
       lastInfoTimestamp = rec.timestamp;
       renderInfos();
-      showInformaçãoAlert();
+      showSupervisorAlert();
     } else {
       alert('Erro ao salvar no servidor.');
     }
   });
 
-  function showInformaçãoAlert(){
+  function showSupervisorAlert(){
     const el = document.getElementById('supervisorAlert');
     if(!el) return;
     el.style.display='block';
@@ -779,7 +750,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     turno: document.getElementById('relTurno')?.value || '',
     info: document.getElementById('relInfo')?.value || ''
   }));
-  setupPhotoUpload("fotoInfo","previewInfo","informacoes", ()=>({
+  setupPhotoUpload("fotoInfo","previewInfo","informacoes_supervisor", ()=>({
     descricao: document.getElementById('infoDescricao')?.value || ''
   }));
 
@@ -808,188 +779,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   // fechar menus com Esc
   document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.getElementById('modalEdit').classList.add('hidden'); document.querySelectorAll('[id^="menu-"]').forEach(m=>m.classList.add('hidden')); } });
-
-
-
-  /* ---------- FECHAMENTO P3 (JS) ---------- */
-  let fechamentosP3 = [];
-  const formFechamentoP3_el = document.getElementById('formFechamentoP3');
-  const listaFechamentosP3_el = document.getElementById('listaFechamentosP3');
-
-  function renderFechamentosP3(){
-    if(!listaFechamentosP3_el) return;
-    listaFechamentosP3_el.innerHTML = '';
-    if(!fechamentosP3 || fechamentosP3.length===0){
-      listaFechamentosP3_el.innerHTML = '<p class="text-sm text-gray-600">Nenhum fechamento salvo para a data selecionada.</p>';
-      return;
-    }
-    fechamentosP3.forEach(r=>{
-      const div = document.createElement('div');
-      div.className = 'border rounded p-3 mb-3 relative bg-gray-50';
-      div.innerHTML = `
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="text-sm font-semibold">Alterações</div>
-            <div class="text-sm preserve mt-1">${escapeHTML(r.alteracoes||'')}</div>
-            <div class="text-sm mt-2">Credencial: ${(r.credencial? 'Sim':'Não')} • Chave: ${(r.chave? 'Sim':'Não')}</div>
-            <div class="text-sm mt-1">Horas: ${r.horaEntrada||''} / ${r.horaSaida||''} / ${r.horaPedestre||''}</div>
-          </div>
-          <div class="relative inline-block">
-            <button class="text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100 del-fechp3" data-id="${r.id}">⋮</button>
-          </div>
-        </div>
-      `;
-      listaFechamentosP3_el.appendChild(div);
-    });
-  }
-
-  if(formFechamentoP3_el){
-    formFechamentoP3_el.addEventListener('submit', async (ev)=>{
-      ev.preventDefault();
-      const novo = {
-        id: genId(),
-        alteracoes: document.getElementById('alteracoesTerminaisP3').value||'',
-        credencial: document.getElementById('credencialGuaritaP3').checked||false,
-        chave: document.getElementById('chaveGuaritaP3').checked||false,
-        horaEntrada: document.getElementById('horaFechEntradaP3').value||'',
-        horaSaida: document.getElementById('horaFechSaidaP3').value||'',
-        horaPedestre: document.getElementById('horaFechPedestreP3').value||'',
-        timestamp: new Date().toISOString()
-      };
-      fechamentosP3.push(novo);
-      salvarLocal(keyFor('fechamentoP3'), fechamentosP3);
-      renderFechamentosP3();
-      formFechamentoP3_el.reset();
-      showTemp('msgFechP3');
-      await enviarAoWebApp({ acao:'salvar_fechamento', data:selectedDate, registro: novo, secao:'fechamentoP3' });
-    });
-  }
-
-  document.addEventListener('click', function(e){
-    const del = e.target.closest('.del-fechp3');
-    if(del){
-      const id = del.dataset.id;
-      if(!confirm('Excluir este registro?')) return;
-      fechamentosP3 = fechamentosP3.filter(x=>x.id!==id);
-      salvarLocal(keyFor('fechamentoP3'), fechamentosP3);
-      renderFechamentosP3();
-      enviarAoWebApp({ acao:'excluir_fechamento', data:selectedDate, id, secao:'fechamentoP3' });
-    }
-  });
-
-  /* ---------- BICICLETA: auto-save ao alterar qualquer campo (debounced) ---------- */
-  (function(){
-    function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-    // connect inputs dynamically
-    function bicicletaAutoSave(){
-      const inputs = document.querySelectorAll('#bicicleta .bicicletaInput, #anotacoesBicicleta');
-      const saveFn = debounce(async function(){
-        // collect values
-        const vals = Array.from(document.querySelectorAll('.bicicletaInput')).map(i=>i.value);
-        const anot = (document.getElementById('anotacoesBicicleta')||{value:''}).value;
-        const payload = { acao:'salvar_bicicleta', data:selectedDate, registro:{ id: genId(), valores: vals, anotacoes: anot, timestamp: new Date().toISOString() } };
-        await enviarAoWebApp(payload);
-        showTemp('msgBic');
-        // update local cache
-        bicicletaData.valores = vals;
-        bicicletaData.anotacoes = anot;
-        salvarLocal(keyFor('bicicleta'), bicicletaData);
-      }, 800);
-      inputs.forEach(inp=>{
-        inp.removeEventListener('input', saveFn);
-        inp.addEventListener('input', saveFn);
-        inp.addEventListener('blur', saveFn);
-      });
-    }
-    // run on init and whenever tabela rebuilt
-    const obs = new MutationObserver(bicicletaAutoSave);
-    const container = document.getElementById('bicicletaTable');
-    if(container) obs.observe(container, { childList:true, subtree:true });
-    // also run once
-    setTimeout(bicicletaAutoSave, 600);
-  })();
-
-  /* ---------- INFORMAÇÕES: render com menu (editar/excluir) e sem 'supervisor' ---------- */
-  function renderInfos(){
-    const infoList = document.getElementById('infoList');
-    if(!infoList) return;
-    infoList.innerHTML = '';
-    if(!infos || infos.length===0){
-      infoList.innerHTML = '<p class="text-sm text-gray-600">Nenhuma informação salva.</p>';
-      return;
-    }
-    infos.slice().reverse().forEach(r=>{
-      const div = document.createElement('div');
-      div.className = 'border rounded p-3 mb-3 relative bg-gray-50';
-      div.innerHTML = `
-        <div class="flex justify-between items-start">
-          <div><div class="text-sm preserve">${escapeHTML(r.descricao||'')}</div><div class="text-xs text-gray-500 mt-2">${escapeHTML(r.timestamp||'')}</div></div>
-          <div class="relative inline-block">
-            <button class="dots-info text-sm w-6 h-6 leading-6 rounded hover:bg-gray-100" data-id="${r.id}">⋮</button>
-            <div id="menu-info-${r.id}" class="menu hidden absolute right-0 mt-1 w-28 bg-white border rounded shadow">
-              <button class="block w-full text-left px-3 py-2 edit-info" data-id="${r.id}">Editar</button>
-              <button class="block w-full text-left px-3 py-2 del-info text-red-600" data-id="${r.id}">Excluir</button>
-            </div>
-          </div>
-        </div>
-      `;
-      infoList.appendChild(div);
-    });
-  }
-
-  // handlers for info edit/delete/menu
-  document.addEventListener('click', function(e){
-    const dots = e.target.closest('.dots-info');
-    if(dots){
-      const id = dots.dataset.id;
-      document.querySelectorAll('[id^="menu-info-"]').forEach(m=>m.classList.add('hidden'));
-      const menu = document.getElementById(`menu-info-${id}`);
-      if(menu) menu.classList.toggle('hidden');
-      return;
-    }
-    const editBtn = e.target.closest('.edit-info');
-    if(editBtn){
-      const id = editBtn.dataset.id;
-      const item = infos.find(x=>x.id===id);
-      if(!item) return;
-      // open prompt to edit
-      const newText = prompt('Editar informação:', item.descricao);
-      if(newText===null) return;
-      item.descricao = newText;
-      item.timestamp = new Date().toISOString();
-      salvarLocal(keyFor('info'), infos);
-      renderInfos();
-      enviarAoWebApp({ acao:'salvar_informacoes', data:selectedDate, registro: item });
-      return;
-    }
-    const delBtn = e.target.closest('.del-info');
-    if(delBtn){
-      const id = delBtn.dataset.id;
-      if(!confirm('Excluir esta informação?')) return;
-      infos = infos.filter(x=>x.id!==id);
-      salvarLocal(keyFor('info'), infos);
-      renderInfos();
-      enviarAoWebApp({ acao:'excluir_informacoes', data:selectedDate, id });
-      return;
-    }
-  });
-
-  // ensure loadAllData includes fechamentosP3 and infos initial rendering
-  try{
-    if(typeof loadAllData === 'function'){
-      const oldLoad = loadAllData;
-      loadAllData = function(){
-        oldLoad();
-        fechamentosP3 = carregarLocal(keyFor('fechamentoP3'), []);
-        renderFechamentosP3();
-        infos = carregarLocal(keyFor('info'), []);
-        renderInfos();
-      };
-    }
-  }catch(e){
-    console.warn('Could not patch loadAllData', e);
-  }
-
 
 }); // end DOMContentLoaded
 </script>
