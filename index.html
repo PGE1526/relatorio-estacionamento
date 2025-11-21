@@ -22,18 +22,40 @@
 <body class="bg-gray-50 min-h-screen">
 
   <header class="bg-white shadow-sm sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+
+    <!-- BLOCO ESQUERDO: LOGO + TÍTULO -->
+    <div class="flex items-center gap-3">
+      <img src="https://raw.githubusercontent.com/PGE1526/relatorio-estacionamento/main/Logo.PNG.png"
+           alt="Logo PGE"
+           class="h-12 w-auto rounded">
+
       <div>
         <h1 class="text-lg font-bold">Relatório diário PGE</h1>
-        <p class="text-sm text-gray-500">Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações supervisor</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button id="prevDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Dia anterior">◀</button>
-        <input id="datePicker" type="date" class="border rounded px-3 py-2 bg-white" />
-        <button id="nextDay" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200" aria-label="Próximo dia">▶</button>
+        <p class="text-sm text-gray-500">
+          Registros por dia: Veículos, Bicicleta, Fechamento, Relatório, Informações supervisor
+        </p>
       </div>
     </div>
-  </header>
+
+    <!-- BLOCO DIREITO: CONTROLES DE DATA -->
+    <div class="flex items-center gap-2">
+      <button id="prevDay"
+              class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200"
+              aria-label="Dia anterior">◀</button>
+
+      <input id="datePicker"
+             type="date"
+             class="border rounded px-3 py-2 bg-white" />
+
+      <button id="nextDay"
+              class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200"
+              aria-label="Próximo dia">▶</button>
+    </div>
+
+  </div>
+</header>
+
 
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
